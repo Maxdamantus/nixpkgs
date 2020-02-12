@@ -11,7 +11,7 @@ stdenv.mkDerivation {
   src = fetchsvn {
     url = http://svn.openstreetmap.org/applications/rendering/gosmore;
     sha256 = "0qsckpqx7i7f8gkqhkzdamr65250afk1rpnh3nbman35kdv3dsxi";
-    rev = "${version}";
+    rev = version;
     ignoreExternals = true;
   };
 
@@ -22,6 +22,9 @@ stdenv.mkDerivation {
   prePatch = ''
     sed -e '/curl.types.h/d' -i *.{c,h,hpp,cpp}
   '';
+
+  patches = [ ./pointer_int_comparison.patch ];
+  patchFlags = [ "-p1" "--binary" ]; # patch has dos style eol
       
   meta = with stdenv.lib; {
     description = "Open Street Map viewer";

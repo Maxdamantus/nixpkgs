@@ -1,11 +1,11 @@
 { stdenv, fetchurl }:
 
 stdenv.mkDerivation rec {
-  name = "duktape-${version}";
-  version = "2.2.0";
+  pname = "duktape";
+  version = "2.5.0";
   src = fetchurl {
     url = "http://duktape.org/duktape-${version}.tar.xz";
-    sha256 = "050csp065ll67dck94s0vdad5r5ck4jwsz1fn1y0fcvn88325xv2";
+    sha256 = "05ln6b2a0s8ynz28armwqs2r5zjyi3cxi0dx6ahnxlqw19b13m43";
   };
 
   buildPhase = ''
@@ -16,14 +16,15 @@ stdenv.mkDerivation rec {
     install -d $out/bin
     install -m755 duk $out/bin/
     install -d $out/lib
-    install -m755 libduktape* $out/lib/
+    install -d $out/include
+    make -f Makefile.sharedlibrary install INSTALL_PREFIX=$out
   '';
   enableParallelBuilding = true;
 
   meta = with stdenv.lib; {
     description = "An embeddable Javascript engine, with a focus on portability and compact footprint";
-    homepage = "http://duktape.org/";
-    downloadPage = "http://duktape.org/download.html";
+    homepage = https://duktape.org/;
+    downloadPage = https://duktape.org/download.html;
     license = licenses.mit;
     maintainers = [ maintainers.fgaz ];
     platforms = platforms.linux;

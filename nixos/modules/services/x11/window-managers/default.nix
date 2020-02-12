@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, ... }:
 
 with lib;
 
@@ -11,13 +11,16 @@ in
     ./2bwm.nix
     ./afterstep.nix
     ./bspwm.nix
+    ./cwm.nix
     ./dwm.nix
+    ./evilwm.nix
     ./exwm.nix
     ./fluxbox.nix
     ./fvwm.nix
     ./herbstluftwm.nix
     ./i3.nix
     ./jwm.nix
+    ./leftwm.nix
     ./metacity.nix
     ./mwm.nix
     ./openbox.nix
@@ -56,17 +59,14 @@ in
       };
 
       default = mkOption {
-        type = types.str;
-        default = "none";
+        type = types.nullOr types.str;
+        default = null;
         example = "wmii";
-        description = "Default window manager loaded if none have been chosen.";
-        apply = defaultWM:
-          if defaultWM == "none" && cfg.session != []  then
-            (head cfg.session).name
-          else if any (w: w.name == defaultWM) cfg.session then
-            defaultWM
-          else
-            throw "Default window manager (${defaultWM}) not found.";
+        description = ''
+          <emphasis role="strong">Deprecated</emphasis>, please use <xref linkend="opt-services.xserver.displayManager.defaultSession"/> instead.
+
+          Default window manager loaded if none have been chosen.
+        '';
       };
 
     };

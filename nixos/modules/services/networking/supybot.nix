@@ -45,8 +45,7 @@ in
 
     environment.systemPackages = [ pkgs.pythonPackages.limnoria ];
 
-    users.extraUsers = singleton {
-      name = "supybot";
+    users.users.supybot = {
       uid = config.ids.uids.supybot;
       group = "supybot";
       description = "Supybot IRC bot user";
@@ -54,8 +53,7 @@ in
       createHome = true;
     };
 
-    users.extraGroups.supybot = {
-      name = "supybot";
+    users.groups.supybot = {
       gid = config.ids.gids.supybot;
     };
 

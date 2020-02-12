@@ -25,14 +25,14 @@ stdenv.mkDerivation {
       ${if static then "LDFLAGS=-static --enable-static --disable-shared" else "--enable-shared"}
     )
   '';
-  makeFlags = if static then "AM_LDFLAGS=-all-static" else "";
+  makeFlags = stdenv.lib.optional static "AM_LDFLAGS=-all-static";
   dontDisableStatic = static;
 
   meta = with lib; {
     description = ''Command-line interface to IPMI-enabled devices'';
     license = licenses.bsd3;
     homepage = https://sourceforge.net/projects/ipmitool/;
-    platforms = platforms.unix;
+    platforms = platforms.linux;
     maintainers = with maintainers; [ fpletz ];
   };
 }

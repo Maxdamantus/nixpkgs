@@ -6,6 +6,8 @@ let
 
   cfg = config.services.parsoid;
 
+  parsoid = pkgs.nodePackages."parsoid-git://github.com/abbradar/parsoid#stable";
+
   confTree = {
     worker_heartbeat_timeout = 300000;
     logging = { level = "info"; };
@@ -24,6 +26,10 @@ let
 
 in
 {
+  imports = [
+    (mkRemovedOptionModule [ "services" "parsoid" "interwikis" ] "Use services.parsoid.wikis instead")
+  ];
+
   ##### interface
 
   options = {
@@ -93,7 +99,7 @@ in
       after = [ "network.target" ];
       serviceConfig = {
         User = "nobody";
-        ExecStart = "${pkgs.nodePackages.parsoid}/lib/node_modules/parsoid/bin/server.js -c ${confFile} -n ${toString cfg.workers}";
+        ExecStart = "${parsoid}/lib/node_modules/parsoid/bin/server.js -c ${confFile} -n ${toString cfg.workers}";
       };
     };
 

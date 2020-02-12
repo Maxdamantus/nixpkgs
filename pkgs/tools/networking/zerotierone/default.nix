@@ -1,25 +1,33 @@
-{ stdenv, fetchurl, openssl, lzo, zlib, iproute, which, ronn }:
+{ stdenv, buildPackages, fetchFromGitHub, openssl, lzo, zlib, iproute, ronn }:
 
 stdenv.mkDerivation rec {
-  version = "1.2.4";
-  name = "zerotierone";
+  pname = "zerotierone";
+  version = "1.4.6";
 
-  src = fetchurl {
-    url = "https://github.com/zerotier/ZeroTierOne/archive/${version}.tar.gz";
-    sha256 = "0n035f2qslw1srxjlm0szrnvb3va3sspbpxqqhng08dp68vmn9wz";
+  src = fetchFromGitHub {
+    owner = "zerotier";
+    repo = "ZeroTierOne";
+    rev = version;
+    sha256 = "1f8hh05wx59dc0fbzdzwq05x0gmrdfl4v103wbcyjmzsbazaw6p3";
   };
 
   preConfigure = ''
-      substituteInPlace ./osdep/LinuxEthernetTap.cpp \
-        --replace 'execlp("ip",' 'execlp("${iproute}/bin/ip",'
+      substituteInPlace ./osdep/ManagedRoute.cpp \
+        --replace '/usr/sbin/ip' '${iproute}/bin/ip'
+
+      substituteInPlace ./osdep/ManagedRoute.cpp \
+        --replace '/sbin/ip' '${iproute}/bin/ip'
 
       patchShebangs ./doc/build.sh
       substituteInPlace ./doc/build.sh \
-        --replace '/usr/bin/ronn' '${ronn}/bin/ronn' \
-        --replace 'ronn -r' '${ronn}/bin/ronn -r'
+        --replace '/usr/bin/ronn' '${buildPackages.ronn}/bin/ronn' \
   '';
 
-  buildInputs = [ openssl lzo zlib iproute which ronn ];
+
+  nativeBuildInputs = [ ronn ];
+  buildInputs = [ openssl lzo zlib iproute ];
+
+  enableParallelBuilding = true;
 
   installPhase = ''
     install -Dt "$out/bin/" zerotier-one
@@ -37,8 +45,8 @@ stdenv.mkDerivation rec {
   meta = with stdenv.lib; {
     description = "Create flat virtual Ethernet networks of almost unlimited size";
     homepage = https://www.zerotier.com;
-    license = licenses.gpl3;
-    maintainers = with maintainers; [ sjmackenzie zimbatm ehmry ];
-    platforms = platforms.x86_64 ++ platforms.aarch64;
+    license = licenses.bsl11;
+    maintainers = with maintainers; [ sjmackenzie zimbatm ehmry obadz danielfullmer ];
+    platforms = with platforms; x86_64 ++ aarch64 ++ arm;
   };
 }

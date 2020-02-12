@@ -1,15 +1,17 @@
-{ stdenv, fetchFromGitHub }:
+{ stdenv, fetchFromGitHub, openssl }:
 
 stdenv.mkDerivation rec {
-  name = "libamqpcpp-${version}";
-  version = "2.7.4";
+  pname = "libamqpcpp";
+  version = "4.1.5";
 
   src = fetchFromGitHub {
     owner = "CopernicaMarketingSoftware";
     repo = "AMQP-CPP";
     rev = "v${version}";
-    sha256 = "0m010bz0axawcpv4d1p1vx7c6r8lg27w2s2vjqpbpg99w35n6c8k";
+    sha256 = "1jyvpa68wymnn8wnh8i59pa9kdbixv86mh8q338agnwkmzvlgm58";
   };
+
+  buildInputs = [ openssl ];
 
   patches = [ ./libamqpcpp-darwin.patch ];
 

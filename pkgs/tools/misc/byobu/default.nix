@@ -1,17 +1,17 @@
-{ stdenv, fetchurl, ncurses, python, perl, textual-window-manager }:
+{ stdenv, fetchurl, python3, perl, textual-window-manager }:
 
 stdenv.mkDerivation rec {
-  version = "5.124";
+  version = "5.130";
   name = "byobu-" + version;
 
   src = fetchurl {
     url = "https://launchpad.net/byobu/trunk/${version}/+download/byobu_${version}.orig.tar.gz";
-    sha256 = "08pipvh2iwy5d4b1bnrh0vwlmm884cqzgsz6jx3ar4shp63i5jjf";
+    sha256 = "0qblw5vz90fixvpwfvlc8bkljsviri5gj77cp63l44ns3lb19r27";
   };
 
   doCheck = true;
 
-  buildInputs = [ python perl ];
+  buildInputs = [ python3 perl ];
   propagatedBuildInputs = [ textual-window-manager ];
 
   meta = {

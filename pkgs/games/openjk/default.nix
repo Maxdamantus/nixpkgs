@@ -19,14 +19,15 @@ let
     genericName = "Jedi Academy";
     categories = "Game;";
   };
-in stdenv.mkDerivation rec {
-  name = "OpenJK-2017-08-11";
+in stdenv.mkDerivation {
+  pname = "OpenJK";
+  version = "2019-10-25";
 
   src = fetchFromGitHub {
     owner = "JACoders";
     repo = "OpenJK";
-    rev = "a0828f06e0181c62e110f2f78d30acb5036b4113";
-    sha256 = "1wbb643z2nyhyirzzy3rz03wjqglwmsgnj7w5cl8167f9f9j9w0m";
+    rev = "e9116155052ef6a22135a1806a10e959aa9a1e00";
+    sha256 = "1f1bz1g2ksw4m3rnbh6fdsawcrpbfjdmq1gs2xj0q450yb840l3z";
   };
 
   dontAddPrefix = true;

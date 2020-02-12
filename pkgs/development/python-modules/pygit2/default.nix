@@ -1,20 +1,21 @@
-{ stdenv, lib, buildPythonPackage, fetchPypi, isPyPy, libgit2, six, cffi }:
+{ stdenv, lib, buildPythonPackage, fetchPypi, isPyPy, isPy3k, libgit2, pytestCheckHook, cffi, cacert }:
 
 buildPythonPackage rec {
-  name = "${pname}-${version}";
   pname = "pygit2";
-  version = "0.26.3";
+  version = "1.0.3";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "29baa530d6fcbf7cca6a75cf9c78fb88613ca81afb39c62fe492f226f6b61800";
+    sha256 = "1ql7hkcxrh8yszglrg7d3y0ivh1l56xdc3j34j2fjy4qq06ifv6y";
   };
 
   preConfigure = lib.optionalString stdenv.isDarwin ''
     export DYLD_LIBRARY_PATH="${libgit2}/lib"
   '';
 
-  propagatedBuildInputs = [ libgit2 six ] ++ lib.optional (!isPyPy) cffi;
+  propagatedBuildInputs = [ libgit2 ] ++ lib.optional (!isPyPy) cffi;
+
+  checkInputs = [ pytestCheckHook ];
 
   preCheck = ''
     # disable tests that require networking
@@ -22,6 +23,20 @@ buildPythonPackage rec {
     rm test/test_credentials.py
     rm test/test_submodule.py
   '';
+
+  # Tests require certificates
+  # https://github.com/NixOS/nixpkgs/pull/72544#issuecomment-582674047
+  SSL_CERT_FILE = "${cacert}/etc/ssl/certs/ca-bundle.crt";
+
+  # setup.py check is broken
+  # https://github.com/libgit2/pygit2/issues/868
+  dontUseSetuptoolsCheck = true;
+
+  # TODO: Test collection is failing
+  # https://github.com/NixOS/nixpkgs/pull/72544#issuecomment-582681068
+  doCheck = false;
+
+  disabled = !isPy3k;
 
   meta = with lib; {
     description = "A set of Python bindings to the libgit2 shared library";

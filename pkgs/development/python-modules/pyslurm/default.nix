@@ -1,24 +1,26 @@
-{ lib, fetchFromGitHub, buildPythonPackage, cython, slurm }:
+{ lib, fetchFromGitHub, fetchpatch, buildPythonPackage, cython, slurm }:
 
 buildPythonPackage rec {
   pname = "pyslurm";
-  version = "20171102";
-  name = pname + "-" + version;
+  version = "19-05-0";
 
   src = fetchFromGitHub {
     repo = "pyslurm";
     owner = "PySlurm";
-    rev = "a2acbc820da419e308c5817998d2abe78a7b75e6";
-    sha256 = "1wmlx5fh1xzjyksvmq7i083hmyvs7id61ysk2d9hbmf8rza498as";
+    rev = version;
+    sha256 = "1lfb4q81y96syz5an1lzscfcvmfvlkf4cfl3i5zllw9r3gbarl2r";
   };
 
   buildInputs = [ cython slurm ];
   setupPyBuildFlags = [ "--slurm-lib=${slurm}/lib" "--slurm-inc=${slurm.dev}/include" ];
 
+  # Test cases need /etc/slurm/slurm.conf and require a working slurm installation
+  doCheck = false;
+
   meta = with lib; {
     homepage = https://github.com/PySlurm/pyslurm;
     description = "Python bindings to Slurm";
     license = licenses.gpl2;
-    maintainers = [ maintainers.veprbl ];
+    maintainers = with maintainers; [ bhipple ];
   };
 }

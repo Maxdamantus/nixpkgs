@@ -1,28 +1,28 @@
-{ stdenv, fetchFromGitHub, rustPlatform, makeWrapper, zlib, openssl }:
+{ stdenv, lib, darwin
+, rustPlatform, fetchFromGitHub
+, openssl, pkg-config, libiconv }:
 
-with rustPlatform;
-
-buildRustPackage rec {
-  name = "cargo-edit-${version}";
-  version = "0.1.6";
+rustPlatform.buildRustPackage rec {
+  pname = "cargo-edit";
+  version = "0.5.0";
 
   src = fetchFromGitHub {
     owner = "killercup";
-    repo = "cargo-edit";
+    repo = pname;
     rev = "v${version}";
-    sha256 = "16wvix2zkpzl1hhlsvd6mkps8fw5k4n2dvjk9m10gg27pixmiync";
+    sha256 = "16gpljbzk6cibry9ssnl22xbcsx2cr57mrs3x3n6cfmldbp6bhbr";
   };
 
-  buildInputs = [ zlib openssl ];
+  cargoSha256 = "1cjpbfgbqzlfs5hck2j3d2v719fwandpnc7bdk4243j7j0k1ng9q";
 
-  cargoSha256 = "1m4yb7472g1n900dh3xqvdcywk3v01slj3bkk7bk7a9p5x1kyjfn";
+  nativeBuildInputs = [ pkg-config ];
+  buildInputs = [ openssl ] ++ lib.optionals stdenv.isDarwin [ libiconv darwin.apple_sdk.frameworks.Security ];
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A utility for managing cargo dependencies from the command line";
     homepage = https://github.com/killercup/cargo-edit;
     license = with licenses; [ mit ];
-    maintainers = with maintainers; [ jb55 ];
+    maintainers = with maintainers; [ gerschtli jb55 filalex77 ];
     platforms = platforms.all;
-    broken = true;
   };
 }

@@ -1,4 +1,4 @@
-{ config, options, lib, pkgs, utils, stdenv, ... }:
+{ config, options, lib, pkgs, utils, ... }:
 
 with lib;
 with utils;
@@ -26,7 +26,7 @@ let
     executable = true;
     destination = "/bin/bridge-stp";
     text = ''
-      #!${pkgs.stdenv.shell} -e
+      #!${pkgs.runtimeShell} -e
       export PATH="${pkgs.mstpd}/bin"
 
       BRIDGES=(${concatStringsSep " " (attrNames rstpBridges)})
@@ -45,51 +45,6 @@ let
       exit 1
     '';
   });
-
-  # Collect all interfaces that are defined for a device
-  # as device:interface key:value pairs.
-  wlanDeviceInterfaces =
-    let
-      allDevices = unique (mapAttrsToList (_: v: v.device) cfg.wlanInterfaces);
-      interfacesOfDevice = d: filterAttrs (_: v: v.device == d) cfg.wlanInterfaces;
-    in
-      genAttrs allDevices (d: interfacesOfDevice d);
-
-  # Convert device:interface key:value pairs into a list, and if it exists,
-  # place the interface which is named after the device at the beginning.
-  wlanListDeviceFirst = device: interfaces:
-    if hasAttr device interfaces
-    then mapAttrsToList (n: v: v//{_iName=n;}) (filterAttrs (n: _: n==device) interfaces) ++ mapAttrsToList (n: v: v//{_iName=n;}) (filterAttrs (n: _: n!=device) interfaces)
-    else mapAttrsToList (n: v: v // {_iName = n;}) interfaces;
-
-  # udev script that configures a physical wlan device and adds virtual interfaces
-  wlanDeviceUdevScript = device: interfaceList: pkgs.writeScript "wlan-${device}-udev-script" ''
-    #!${pkgs.stdenv.shell}
-
-    # Change the wireless phy device to a predictable name.
-    if [ -e "/sys/class/net/${device}/phy80211/name" ]; then
-      ${pkgs.iw}/bin/iw phy `${pkgs.coreutils}/bin/cat /sys/class/net/${device}/phy80211/name` set name ${device} || true
-    fi
-
-    # Crate new, virtual interfaces and configure them at the same time
-    ${flip concatMapStrings (drop 1 interfaceList) (i: ''
-    ${pkgs.iw}/bin/iw dev ${device} interface add ${i._iName} type ${i.type} \
-      ${optionalString (i.type == "mesh" && i.meshID != null) "mesh_id ${i.meshID}"} \
-      ${optionalString (i.type == "monitor" && i.flags != null) "flags ${i.flags}"} \
-      ${optionalString (i.type == "managed" && i.fourAddr != null) "4addr ${if i.fourAddr then "on" else "off"}"} \
-      ${optionalString (i.mac != null) "addr ${i.mac}"}
-    '')}
-
-    # Reconfigure and rename the default interface that already exists
-    ${flip concatMapStrings (take 1 interfaceList) (i: ''
-      ${pkgs.iw}/bin/iw dev ${device} set type ${i.type}
-      ${optionalString (i.type == "mesh" && i.meshID != null) "${pkgs.iw}/bin/iw dev ${device} set meshid ${i.meshID}"}
-      ${optionalString (i.type == "monitor" && i.flags != null) "${pkgs.iw}/bin/iw dev ${device} set monitor ${i.flags}"}
-      ${optionalString (i.type == "managed" && i.fourAddr != null) "${pkgs.iw}/bin/iw dev ${device} set 4addr ${if i.fourAddr then "on" else "off"}"}
-      ${optionalString (i.mac != null) "${pkgs.iproute}/bin/ip link set dev ${device} address ${i.mac}"}
-      ${optionalString (device != i._iName) "${pkgs.iproute}/bin/ip link set dev ${device} name ${i._iName}"}
-    '')}
-  '';
 
   # We must escape interfaces due to the systemd interpretation
   subsystemDevice = interface:
@@ -188,13 +143,34 @@ let
         description = "Name of the interface.";
       };
 
-      preferTempAddress = mkOption {
-        type = types.bool;
-        default = cfg.enableIPv6;
-        defaultText = literalExample "config.networking.enableIPv6";
+      tempAddress = mkOption {
+        type = types.enum [ "default" "enabled" "disabled" ];
+        default = if cfg.enableIPv6 then "default" else "disabled";
+        defaultText = literalExample ''if cfg.enableIPv6 then "default" else "disabled"'';
         description = ''
-          When using SLAAC prefer a temporary (IPv6) address over the EUI-64
-          address for originating connections. This is used to reduce tracking.
+          When IPv6 is enabled with SLAAC, this option controls the use of
+          temporary address (aka privacy extensions). This is used to reduce tracking.
+          The three possible values are:
+
+          <itemizedlist>
+           <listitem>
+            <para>
+             <literal>"default"</literal> to generate temporary addresses and use
+             them by default;
+            </para>
+           </listitem>
+           <listitem>
+            <para>
+             <literal>"enabled"</literal> to generate temporary addresses but keep
+             using the standard EUI-64 ones by default;
+            </para>
+           </listitem>
+           <listitem>
+            <para>
+             <literal>"disabled"</literal> to completely disable temporary addresses.
+            </para>
+           </listitem>
+          </itemizedlist>
         '';
       };
 
@@ -332,6 +308,11 @@ let
       let
         defined = x: x != "_mkMergedOptionModule";
       in [
+        (mkChangedOptionModule [ "preferTempAddress" ] [ "tempAddress" ]
+         (config:
+          let bool = getAttrFromPath [ "preferTempAddress" ] config;
+          in if bool then "default" else "enabled"
+        ))
         (mkRenamedOptionModule [ "ip4" ] [ "ipv4" "addresses"])
         (mkRenamedOptionModule [ "ip6" ] [ "ipv6" "addresses"])
         (mkRemovedOptionModule [ "subnetMask" ] ''
@@ -350,7 +331,7 @@ let
             optional (defined ipv6Address && defined ipv6PrefixLength)
             { address = ipv6Address; prefixLength = ipv6PrefixLength; }))
 
-        ({ options.warnings = options.warnings; })
+        ({ options.warnings = options.warnings; options.assertions = options.assertions; })
       ];
 
   };
@@ -386,7 +367,7 @@ in
         You should try to make this ID unique among your machines. You can
         generate a random 32-bit ID using the following commands:
 
-        <literal>cksum /etc/machine-id | while read c rest; do printf "%x" $c; done</literal>
+        <literal>head -c 8 /etc/machine-id</literal>
 
         (this derives it from the machine-id that systemd generates) or
 
@@ -489,7 +470,7 @@ in
     networking.interfaces = mkOption {
       default = {};
       example =
-        { eth0.ipv4 = [ {
+        { eth0.ipv4.addresses = [ {
             address = "131.211.84.78";
             prefixLength = 25;
           } ];
@@ -844,19 +825,19 @@ in
     networking.wlanInterfaces = mkOption {
       default = { };
       example = literalExample {
-        "wlan-station0" = {
+        wlan-station0 = {
             device = "wlp6s0";
         };
-        "wlan-adhoc0" = {
+        wlan-adhoc0 = {
             type = "ibss";
             device = "wlp6s0";
             mac = "02:00:00:00:00:01";
         };
-        "wlan-p2p0" = {
+        wlan-p2p0 = {
             device = "wlp6s0";
             mac = "02:00:00:00:00:02";
         };
-        "wlan-ap0" = {
+        wlan-ap0 = {
             device = "wlp6s0";
             mac = "02:00:00:00:00:03";
         };
@@ -881,7 +862,7 @@ in
         options = {
 
           device = mkOption {
-            type = types.string;
+            type = types.str;
             example = "wlp6s0";
             description = "The name of the underlying hardware WLAN device as assigned by <literal>udev</literal>.";
           };
@@ -897,7 +878,7 @@ in
           };
 
           meshID = mkOption {
-            type = types.nullOr types.string;
+            type = types.nullOr types.str;
             default = null;
             description = "MeshID of interface with type <literal>mesh</literal>.";
           };
@@ -948,6 +929,11 @@ in
         Whether to use DHCP to obtain an IP address and other
         configuration for all network interfaces that are not manually
         configured.
+
+        Using this option is highly discouraged and also incompatible with
+        <option>networking.useNetworkd</option>. Please use
+        <option>networking.interfaces.&lt;name&gt;.useDHCP</option> instead
+        and set this to false.
       '';
     };
 
@@ -971,7 +957,7 @@ in
     warnings = concatMap (i: i.warnings) interfaces;
 
     assertions =
-      (flip map interfaces (i: {
+      (forEach interfaces (i: {
         # With the linux kernel, interface name length is limited by IFNAMSIZ
         # to 16 bytes, including the trailing null byte.
         # See include/linux/if.h in the kernel sources
@@ -979,13 +965,13 @@ in
         message = ''
           The name of networking.interfaces."${i.name}" is too long, it needs to be less than 16 characters.
         '';
-      })) ++ (flip map slaveIfs (i: {
+      })) ++ (forEach slaveIfs (i: {
         assertion = i.ipv4.addresses == [ ] && i.ipv6.addresses == [ ];
         message = ''
           The networking.interfaces."${i.name}" must not have any defined ips when it is a slave.
         '';
-      })) ++ (flip map interfaces (i: {
-        assertion = i.preferTempAddress -> cfg.enableIPv6;
+      })) ++ (forEach interfaces (i: {
+        assertion = i.tempAddress != "disabled" -> cfg.enableIPv6;
         message = ''
           Temporary addresses are only needed when IPv6 is enabled.
         '';
@@ -1012,9 +998,12 @@ in
       "net.ipv6.conf.default.disable_ipv6" = mkDefault (!cfg.enableIPv6);
       "net.ipv6.conf.all.forwarding" = mkDefault (any (i: i.proxyARP) interfaces);
     } // listToAttrs (flip concatMap (filter (i: i.proxyARP) interfaces)
-        (i: flip map [ "4" "6" ] (v: nameValuePair "net.ipv${v}.conf.${i.name}.proxy_arp" true)))
-      // listToAttrs (flip map (filter (i: i.preferTempAddress) interfaces)
-        (i: nameValuePair "net.ipv6.conf.${i.name}.use_tempaddr" 2));
+        (i: forEach [ "4" "6" ] (v: nameValuePair "net.ipv${v}.conf.${replaceChars ["."] ["/"] i.name}.proxy_arp" true)))
+      // listToAttrs (forEach interfaces
+        (i: let
+          opt = i.tempAddress;
+          val = { disabled = 0; enabled = 1; default = 2; }.${opt};
+         in nameValuePair "net.ipv6.conf.${replaceChars ["."] ["/"] i.name}.use_tempaddr" val));
 
     # Capabilities won't work unless we have at-least a 4.3 Linux
     # kernel because we need the ambient capability
@@ -1039,8 +1028,8 @@ in
         domainname "${cfg.domain}"
       '';
 
-    environment.etc."hostid" = mkIf (cfg.hostId != null)
-      { source = pkgs.runCommand "gen-hostid" {} ''
+    environment.etc.hostid = mkIf (cfg.hostId != null)
+      { source = pkgs.runCommand "gen-hostid" { preferLocalBuild = true; } ''
           hi="${cfg.hostId}"
           ${if pkgs.stdenv.isBigEndian then ''
             echo -ne "\x''${hi:0:2}\x''${hi:2:2}\x''${hi:4:2}\x''${hi:6:2}" > $out
@@ -1052,7 +1041,7 @@ in
 
     # static hostname configuration needed for hostnamectl and the
     # org.freedesktop.hostname1 dbus service (both provided by systemd)
-    environment.etc."hostname" = mkIf (cfg.hostName != "")
+    environment.etc.hostname = mkIf (cfg.hostName != "")
       {
         text = cfg.hostName + "\n";
       };
@@ -1062,7 +1051,6 @@ in
         pkgs.iproute
         pkgs.iputils
         pkgs.nettools
-        pkgs.openresolv
       ]
       ++ optionals config.networking.wireless.enable [
         pkgs.wirelesstools # FIXME: obsolete?
@@ -1073,7 +1061,7 @@ in
 
     # The network-interfaces target is kept for backwards compatibility.
     # New modules must NOT use it.
-    systemd.targets."network-interfaces" =
+    systemd.targets.network-interfaces =
       { description = "All Network Interfaces (deprecated)";
         wantedBy = [ "network.target" ];
         before = [ "network.target" ];
@@ -1096,9 +1084,9 @@ in
           ${cfg.localCommands}
         '';
       };
-    } // (listToAttrs (flip map interfaces (i:
+    } // (listToAttrs (forEach interfaces (i:
       let
-        deviceDependency = if config.boot.isContainer
+        deviceDependency = if (config.boot.isContainer || i.name == "lo")
           then []
           else [ (subsystemDevice i.name) ];
       in
@@ -1132,7 +1120,32 @@ in
 
     virtualisation.vswitch = mkIf (cfg.vswitches != { }) { enable = true; };
 
-    services.udev.packages = mkIf (cfg.wlanInterfaces != {}) [
+    services.udev.packages =  [
+      (pkgs.writeTextFile rec {
+        name = "ipv6-privacy-extensions.rules";
+        destination = "/etc/udev/rules.d/98-${name}";
+        text = ''
+          # enable and prefer IPv6 privacy addresses by default
+          ACTION=="add", SUBSYSTEM=="net", RUN+="${pkgs.bash}/bin/sh -c 'echo 2 > /proc/sys/net/ipv6/conf/%k/use_tempaddr'"
+        '';
+      })
+      (pkgs.writeTextFile rec {
+        name = "ipv6-privacy-extensions.rules";
+        destination = "/etc/udev/rules.d/99-${name}";
+        text = concatMapStrings (i:
+          let
+            opt = i.tempAddress;
+            val = if opt == "disabled" then 0 else 1;
+            msg = if opt == "disabled"
+                  then "completely disable IPv6 privacy addresses"
+                  else "enable IPv6 privacy addresses but prefer EUI-64 addresses";
+          in
+          ''
+            # override to ${msg} for ${i.name}
+            ACTION=="add", SUBSYSTEM=="net", RUN+="${pkgs.procps}/bin/sysctl net.ipv6.conf.${replaceChars ["."] ["/"] i.name}.use_tempaddr=${toString val}"
+          '') (filter (i: i.tempAddress != "default") interfaces);
+      })
+    ] ++ lib.optional (cfg.wlanInterfaces != {})
       (pkgs.writeTextFile {
         name = "99-zzz-40-wlanInterfaces.rules";
         destination = "/etc/udev/rules.d/99-zzz-40-wlanInterfaces.rules";
@@ -1158,7 +1171,7 @@ in
             # The script creates the required, new WLAN interfaces interfaces and configures the
             # existing, default interface.
             curInterfaceScript = device: current: new: pkgs.writeScript "udev-run-script-wlan-interfaces-${device}.sh" ''
-              #!${pkgs.stdenv.shell}
+              #!${pkgs.runtimeShell}
               # Change the wireless phy device to a predictable name.
               ${pkgs.iw}/bin/iw phy `${pkgs.coreutils}/bin/cat /sys/class/net/$INTERFACE/phy80211/name` set name ${device}
 
@@ -1177,7 +1190,7 @@ in
 
             # Udev script to execute for a new WLAN interface. The script configures the new WLAN interface.
             newInterfaceScript = device: new: pkgs.writeScript "udev-run-script-wlan-interfaces-${new._iName}.sh" ''
-              #!${pkgs.stdenv.shell}
+              #!${pkgs.runtimeShell}
               # Configure the new interface
               ${pkgs.iw}/bin/iw dev ${new._iName} set type ${new.type}
               ${optionalString (new.type == "mesh" && new.meshID!=null) "${pkgs.iw}/bin/iw dev ${device} set meshid ${new.meshID}"}
@@ -1191,13 +1204,13 @@ in
           in
           flip (concatMapStringsSep "\n") (attrNames wlanDeviceInterfaces) (device:
             let
-              interfaces = wlanListDeviceFirst device wlanDeviceInterfaces."${device}";
+              interfaces = wlanListDeviceFirst device wlanDeviceInterfaces.${device};
               curInterface = elemAt interfaces 0;
               newInterfaces = drop 1 interfaces;
             in ''
             # It is important to have that rule first as overwriting the NAME attribute also prevents the
             # next rules from matching.
-            ${flip (concatMapStringsSep "\n") (wlanListDeviceFirst device wlanDeviceInterfaces."${device}") (interface:
+            ${flip (concatMapStringsSep "\n") (wlanListDeviceFirst device wlanDeviceInterfaces.${device}) (interface:
             ''ACTION=="add", SUBSYSTEM=="net", ENV{DEVTYPE}=="wlan", ENV{INTERFACE}=="${interface._iName}", ${systemdAttrs interface._iName}, RUN+="${newInterfaceScript device interface}"'')}
 
             # Add the required, new WLAN interfaces to the default WLAN interface with the
@@ -1206,8 +1219,7 @@ in
             # Generate the same systemd events for both 'add' and 'move' udev events.
             ACTION=="move", SUBSYSTEM=="net", ENV{DEVTYPE}=="wlan", NAME=="${device}", ${systemdAttrs curInterface._iName}
           '');
-      }) ];
-
+      });
   };
 
 }

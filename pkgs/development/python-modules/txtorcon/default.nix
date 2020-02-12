@@ -1,11 +1,10 @@
 {lib, buildPythonPackage, fetchPypi, isPy3k, incremental, ipaddress, twisted
 , automat, zope_interface, idna, pyopenssl, service-identity, pytest, mock, lsof
-, GeoIP}:
+, GeoIP, isPy27}:
 
 buildPythonPackage rec {
-  name = "${pname}-${version}";
   pname = "txtorcon";
-  version = "0.19.3";
+  version = "19.1.0";
 
   checkInputs = [ pytest mock lsof GeoIP ];
   propagatedBuildInputs = [
@@ -16,16 +15,11 @@ buildPythonPackage rec {
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "1za4qag4g2lbw695v4ssxqc2aspdyknnbn2diylwg8q9g5k9cczp";
+    sha256 = "19ayn5w9ayxbb1m84l1s9qlb6kv7sz6sg34mzy8bnidc7qnfbn15";
   };
 
-  # ipaddress isn't required for Python 3 although it's in requirements.txt.
-  # Because ipaddress doesn't install on Python 3, remove the requirement so the
-  # installation of this package doesn't fail on Python 3.
-  postPatch = "" + lib.optionalString isPy3k ''
-    substituteInPlace requirements.txt --replace "ipaddress>=1.0.16" ""
-  '';
-
+  # zope.interface issue
+  doCheck = isPy3k;
   # Skip a failing test until fixed upstream:
   # https://github.com/meejah/txtorcon/issues/250
   checkPhase = ''
@@ -36,6 +30,9 @@ buildPythonPackage rec {
     description = "Twisted-based Tor controller client, with state-tracking and configuration abstractions";
     homepage = https://github.com/meejah/txtorcon;
     maintainers = with lib.maintainers; [ jluttine ];
+    # Currently broken on Python 2.7. See
+    # https://github.com/NixOS/nixpkgs/issues/71826
+    broken = isPy27;
     license = lib.licenses.mit;
   };
 }

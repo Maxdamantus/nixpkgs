@@ -1,13 +1,13 @@
-{ stdenv, fetchurl, fetchpatch, pkgconfig, openconnect, file, gawk,
+{ stdenv, fetchurl, pkgconfig, openconnect, file, gawk,
   openvpn, vpnc, glib, dbus, iptables, gnutls, polkit,
   wpa_supplicant, readline6, pptp, ppp }:
 
 stdenv.mkDerivation rec {
-  name = "connman-${version}";
-  version = "1.35";
+  pname = "connman";
+  version = "1.37";
   src = fetchurl {
-    url = "mirror://kernel/linux/network/connman/${name}.tar.xz";
-    sha256 = "1apj5j25kj7v1bsfv3nh54aiq873nfrsjfbj85p5qm3ihfwxxmv6";
+    url = "mirror://kernel/linux/network/connman/${pname}-${version}.tar.xz";
+    sha256 = "05kfjiqhqfmbbwc4snnyvi5hc4zxanac62f6gcwaf5mvn0z9pqkc";
   };
 
   buildInputs = [ openconnect polkit
@@ -15,14 +15,6 @@ stdenv.mkDerivation rec {
                   wpa_supplicant readline6 pptp ppp ];
 
   nativeBuildInputs = [ pkgconfig file gawk ];
-
-  patches = [
-    (fetchpatch {
-      name = "header-include.patch";
-      url = "https://git.kernel.org/pub/scm/network/connman/connman.git/patch/?id=bdfb3526466f8fb8f13d9259037d8f42c782ce24";
-      sha256 = "0q6ysy2xvvcmkcbw1y29x90g7g7kih7v95k1xbxdcxkras5yl8nf";
-    })
-  ];
 
   preConfigure = ''
     export WPASUPPLICANT=${wpa_supplicant}/sbin/wpa_supplicant
@@ -34,8 +26,8 @@ stdenv.mkDerivation rec {
   configureFlags = [
     "--sysconfdir=\${out}/etc"
     "--localstatedir=/var"
-    "--with-dbusconfdir=\${out}/etc"
-    "--with-dbusdatadir=\${out}/usr/share"
+    "--with-dbusconfdir=${placeholder "out"}/share"
+    "--with-dbusdatadir=${placeholder "out"}/share"
     "--disable-maintainer-mode"
     "--enable-openconnect=builtin"
     "--with-openconnect=${openconnect}/sbin/openconnect"
@@ -61,7 +53,7 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "A daemon for managing internet connections";
-    homepage = https://connman.net/;
+    homepage = https://01.org/connman;
     maintainers = [ maintainers.matejc ];
     platforms = platforms.linux;
     license = licenses.gpl2;

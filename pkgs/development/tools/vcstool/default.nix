@@ -4,18 +4,17 @@
 with python3Packages;
 
 buildPythonApplication rec {
-  name = "${pname}-${version}";
   pname = "vcstool";
-  version = "0.1.31";
+  version = "0.1.36";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "0n2zkvy2km9ky9lljf1mq5nqyqi5qqzfy2a6sgkjg2grvsk7abxc";
+    sha256 = "3c3d347f46cda641344ec5d613896499981b0540e2bfa299baf6026dab7649ca";
   };
 
   propagatedBuildInputs = [ pyyaml ];
 
-  makeWrapperArgs = ["--prefix" "PATH" ":" "${stdenv.lib.makeBinPath [ git bazaar subversion ]}"];
+  makeWrapperArgs = ["--prefix" "PATH" ":" (stdenv.lib.makeBinPath [ git bazaar subversion ])];
 
   doCheck = false; # requires network
 

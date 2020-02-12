@@ -17,6 +17,7 @@ tlp = pkgs.tlp.override {
 confFile = pkgs.runCommand "tlp"
   { config = cfg.extraConfig;
     passAsFile = [ "config" ];
+    preferLocalBuild = true;
   }
   ''
     cat ${tlp}/etc/default/tlp > $out
@@ -36,7 +37,7 @@ in
       enable = mkOption {
         type = types.bool;
         default = false;
-        description = "Whether to enable the TLP daemon.";
+        description = "Whether to enable the TLP power management daemon.";
       };
 
       extraConfig = mkOption {
@@ -56,12 +57,14 @@ in
 
     powerManagement.scsiLinkPolicy = null;
     powerManagement.cpuFreqGovernor = null;
+    powerManagement.cpufreq.max = null;
+    powerManagement.cpufreq.min = null;
 
-    systemd.sockets."systemd-rfkill".enable = false;
+    systemd.sockets.systemd-rfkill.enable = false;
 
     systemd.services = {
       "systemd-rfkill@".enable = false;
-      "systemd-rfkill".enable = false;
+      systemd-rfkill.enable = false;
 
       tlp = {
         description = "TLP system startup/shutdown";
@@ -100,13 +103,14 @@ in
 
     services.udev.packages = [ tlp ];
 
-    environment.etc = [{ source = confFile;
-                         target = "default/tlp";
-                       }
-                      ] ++ optional enableRDW {
-                        source = "${tlp}/etc/NetworkManager/dispatcher.d/99tlp-rdw-nm";
-                        target = "NetworkManager/dispatcher.d/99tlp-rdw-nm";
-                      };
+    environment.etc =
+      {
+        "default/tlp".source = confFile;
+      } // optionalAttrs enableRDW {
+        "NetworkManager/dispatcher.d/99tlp-rdw-nm" = {
+          source = "${tlp}/etc/NetworkManager/dispatcher.d/99tlp-rdw-nm";
+        };
+      };
 
     environment.systemPackages = [ tlp ];
 

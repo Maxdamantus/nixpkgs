@@ -1,40 +1,41 @@
-{ stdenv, lib, go, procps, removeReferencesTo, fetchFromGitHub }:
+{ buildGoModule, stdenv, lib, procps, fetchFromGitHub }:
 
 let
-  common = { stname, target, patches ? [], postInstall ? "" }:
-    stdenv.mkDerivation rec {
-      version = "0.14.45";
+  common = { stname, target, postInstall ? "" }:
+    buildGoModule rec {
+      version = "1.3.4";
       name = "${stname}-${version}";
 
       src = fetchFromGitHub {
         owner  = "syncthing";
         repo   = "syncthing";
         rev    = "v${version}";
-        sha256 = "0hhldmvsbvkaj0x6af7c41zq5mbzcymv5xxmwvb4h5zbz49z9vzl";
+        sha256 = "076k06p2vqqz2r5bgvqkjipnhznbfbalp3pa2gjm2j9hy7nldr9f";
       };
 
-      inherit patches;
+      goPackagePath = "github.com/syncthing/syncthing";
 
-      buildInputs = [ go ];
-      nativeBuildInputs = [ removeReferencesTo ];
+      modSha256 = "10fgfjip5xr8lim2z0dh7399xpcnhxis9s9yd36fk934h1k1hwzd";
+
+      patches = [
+        ./add-stcli-target.patch
+      ];
+      BUILD_USER="nix";
+      BUILD_HOST="nix";
 
       buildPhase = ''
-        # Syncthing expects that it is checked out in $GOPATH, if that variable is
-        # set.  Since this isn't true when we're fetching source, we can explicitly
-        # unset it and force Syncthing to set up a temporary one for us.
-        env GOPATH= BUILD_USER=nix BUILD_HOST=nix go run build.go -no-upgrade -version v${version} build ${target}
+        runHook preBuild
+        go run build.go -no-upgrade -version v${version} build ${target}
+        runHook postBuild
       '';
 
       installPhase = ''
+        runHook preInstall
         install -Dm755 ${target} $out/bin/${target}
         runHook postInstall
       '';
 
       inherit postInstall;
-
-      preFixup = ''
-        find $out/bin -type f -exec remove-references-to -t ${go} '{}' '+'
-      '';
 
       meta = with lib; {
         homepage = https://www.syncthing.net/;
@@ -79,7 +80,6 @@ in {
   syncthing-cli = common {
     stname = "syncthing-cli";
 
-    patches = [ ./add-stcli-target.patch ];
     target = "stcli";
   };
 

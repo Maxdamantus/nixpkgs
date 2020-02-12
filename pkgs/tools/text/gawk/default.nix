@@ -1,6 +1,6 @@
 { stdenv, fetchurl
 # TODO: links -lsigsegv but loses the reference for some reason
-, withSigsegv ? (false && stdenv.system != "x86_64-cygwin"), libsigsegv
+, withSigsegv ? (false && stdenv.hostPlatform.system != "x86_64-cygwin"), libsigsegv
 , interactive ? false, readline
 
 /* Test suite broke on:
@@ -19,11 +19,11 @@ let
   inherit (stdenv.lib) optional;
 in
 stdenv.mkDerivation rec {
-  name = "gawk-4.2.0";
+  name = "gawk-5.0.1";
 
   src = fetchurl {
     url = "mirror://gnu/gawk/${name}.tar.xz";
-    sha256 = "1wm9lqj77y7xz07zi0n187aqm8zavzxzpm1j53ahxz81q0qwvwyl";
+    sha256 = "15570p7g2x54asvr2fsc56sxzmm08fbk4mzpcs5n92fp9vq8cklf";
   };
 
   # When we do build separate interactive version, it makes sense to always include man.
@@ -41,7 +41,9 @@ stdenv.mkDerivation rec {
     (if interactive then "--with-readline=${readline.dev}" else "--without-readline")
   ];
 
-  makeFlags = "AR=${stdenv.cc.targetPrefix}ar";
+  makeFlags = [
+    "AR=${stdenv.cc.targetPrefix}ar"
+  ];
 
   inherit doCheck;
 
@@ -55,7 +57,7 @@ stdenv.mkDerivation rec {
   };
 
   meta = with stdenv.lib; {
-    homepage = http://www.gnu.org/software/gawk/;
+    homepage = https://www.gnu.org/software/gawk/;
     description = "GNU implementation of the Awk programming language";
 
     longDescription = ''
@@ -74,7 +76,7 @@ stdenv.mkDerivation rec {
 
     license = licenses.gpl3Plus;
 
-    platforms = platforms.unix;
+    platforms = platforms.unix ++ platforms.windows;
 
     maintainers = [ ];
   };

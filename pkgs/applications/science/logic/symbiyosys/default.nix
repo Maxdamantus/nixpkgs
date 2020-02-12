@@ -1,17 +1,19 @@
-{ stdenv, fetchFromGitHub, yosys, python3 }:
+{ stdenv, fetchFromGitHub, yosys, bash, python3, yices }:
 
-stdenv.mkDerivation rec {
-  name = "symbiyosys-${version}";
-  version = "2018.03.07";
+stdenv.mkDerivation {
+  pname = "symbiyosys";
+  version = "2020.02.08";
 
   src = fetchFromGitHub {
-    owner  = "yosyshq";
-    repo   = "symbiyosys";
-    rev    = "2c13fbefe67adb3a4adb8a6f283b198abb8a43a0";
-    sha256 = "0v60530w5y4yj66zcp7lwa82158iw26mil1gj41lzyi2p651kc1k";
+    owner  = "YosysHQ";
+    repo   = "SymbiYosys";
+    rev    = "500b526131f434b9679732fc89515dbed67c8d7d";
+    sha256 = "1pwbirszc80r288x81nx032snniqgmc80i09bbha2i3zd0c3pj5h";
   };
 
   buildInputs = [ python3 yosys ];
+
+  propagatedBuildInputs = [ yices ];
 
   buildPhase = "true";
   installPhase = ''
@@ -26,12 +28,14 @@ stdenv.mkDerivation rec {
     substituteInPlace $out/bin/sby \
       --replace "##yosys-sys-path##" \
                 "sys.path += [p + \"/share/yosys/python3/\" for p in [\"$out\", \"${yosys}\"]]"
+    substituteInPlace $out/share/yosys/python3/sby_core.py \
+      --replace '"/usr/bin/env", "bash"' '"${bash}/bin/bash"'
   '';
   meta = {
-    description = "Yosys verification tools for Hardware Definition Languages";
+    description = "Tooling for Yosys-based verification flows";
     homepage    = https://symbiyosys.readthedocs.io/;
-    license     = stdenv.lib.licenses.mit;
-    maintainers = with stdenv.lib.maintainers; [ thoughtpolice ];
-    platforms   = stdenv.lib.platforms.linux;
+    license     = stdenv.lib.licenses.isc;
+    maintainers = with stdenv.lib.maintainers; [ thoughtpolice emily ];
+    platforms   = stdenv.lib.platforms.all;
   };
 }

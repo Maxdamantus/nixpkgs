@@ -3,12 +3,11 @@
 with python3Packages;
 buildPythonApplication rec {
   pname = "autoflake";
-  version = "1.0";
-  name = "${pname}-${version}";
+  version = "1.3.1";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "12k4v8w7awqp83j727y0iwcbjqj3ccvbai7c9m0wgbmq5xkvav8a";
+    sha256 = "0nzr057dbmgprp4a52ymafdkdd5zp2wcqf42913xc7hhvvdbj338";
   };
 
   propagatedBuildInputs = [ pyflakes ];

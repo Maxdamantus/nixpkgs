@@ -1,29 +1,56 @@
-{ stdenv, go, buildGoPackage, fetchFromGitHub }:
+{ lib, go, buildGoPackage, fetchFromGitHub, mkYarnPackage }:
 
-buildGoPackage rec {
-  name = "prometheus-${version}";
-  version = "1.8.1";
-  rev = "v${version}";
+let
+  version = "2.15.2";
+
+  src = fetchFromGitHub {
+    rev = "v${version}";
+    owner = "prometheus";
+    repo = "prometheus";
+    sha256 = "0gl11qqbq57vkx226n8z4x07fwvly5f21y6dn20kjh2fxigmrb2n";
+  };
+
+  webui = mkYarnPackage {
+    src = "${src}/web/ui/react-app";
+    packageJSON = ./webui-package.json;
+    yarnNix = ./webui-yarndeps.nix;
+
+    # The standard yarn2nix directory management causes build failures with
+    # Prometheus's webui due to using relative imports into node_modules. Use
+    # an extremely simplified version of it instead.
+    configurePhase = "ln -s $node_modules node_modules";
+    buildPhase = "PUBLIC_URL=. yarn build";
+    installPhase = "mv build $out";
+    distPhase = "true";
+  };
+in buildGoPackage rec {
+  pname = "prometheus";
+  inherit src version;
 
   goPackagePath = "github.com/prometheus/prometheus";
 
-  src = fetchFromGitHub {
-    inherit rev;
-    owner = "prometheus";
-    repo = "prometheus";
-    sha256 = "07xvpjhhxc0r73qfmkvf94zhv19zv76privw6blg35k5nxcnj7j4";
-  };
+  postPatch = ''
+    ln -s ${webui.node_modules} web/ui/react-app/node_modules
+    ln -s ${webui} web/ui/static/react
+  '';
 
-  docheck = true;
+  buildFlagsArray = let
+    t = "${goPackagePath}/vendor/github.com/prometheus/common/version";
+  in [
+    "-tags=builtinassets"
+    ''
+      -ldflags=
+         -X ${t}.Version=${version}
+         -X ${t}.Revision=unknown
+         -X ${t}.Branch=unknown
+         -X ${t}.BuildUser=nix@nixpkgs
+         -X ${t}.BuildDate=unknown
+         -X ${t}.GoVersion=${lib.getVersion go}
+    ''
+  ];
 
-  buildFlagsArray = let t = "${goPackagePath}/version"; in ''
-    -ldflags=
-       -X ${t}.Version=${version}
-       -X ${t}.Revision=unknown
-       -X ${t}.Branch=unknown
-       -X ${t}.BuildUser=nix@nixpkgs
-       -X ${t}.BuildDate=unknown
-       -X ${t}.GoVersion=${stdenv.lib.getVersion go}
+  preBuild = ''
+    make -C go/src/${goPackagePath} assets
   '';
 
   preInstall = ''
@@ -32,11 +59,13 @@ buildGoPackage rec {
     cp -a $src/console_libraries $src/consoles $bin/etc/prometheus
   '';
 
-  meta = with stdenv.lib; {
+  doCheck = true;
+
+  meta = with lib; {
     description = "Service monitoring system and time series database";
-    homepage = https://prometheus.io;
+    homepage = "https://prometheus.io";
     license = licenses.asl20;
-    maintainers = with maintainers; [ benley fpletz ];
+    maintainers = with maintainers; [ benley fpletz globin willibutz ];
     platforms = platforms.unix;
   };
 }

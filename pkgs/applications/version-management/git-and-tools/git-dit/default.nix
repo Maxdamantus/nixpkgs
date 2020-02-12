@@ -1,19 +1,22 @@
 { stdenv
 , fetchFromGitHub
-, openssl
-, gcc
+, openssl_1_0_2
 , zlib
 , libssh
 , cmake
 , perl
 , pkgconfig
 , rustPlatform
+, curl
+, libiconv
+, CoreFoundation
+, Security
 }:
 
 with rustPlatform;
 
 buildRustPackage rec {
-  name = "git-dit-${version}";
+  pname = "git-dit";
   version = "0.4.0";
 
   src = fetchFromGitHub {
@@ -23,7 +26,7 @@ buildRustPackage rec {
     sha256 = "1sx6sc2dj3l61gbiqz8vfyhw5w4xjdyfzn1ixz0y8ipm579yc7a2";
   };
 
-  cargoSha256 = "08zbvjwjdpv2sbj6mh73py82inhs18jvmh8m9k4l94fcz6ykgqwr";
+  cargoSha256 = "10852131aizfw9j1yl4gz180h4gd8y5ymx3wmf5v9cmqiqxy8bgy";
 
   nativeBuildInputs = [
     cmake
@@ -32,9 +35,14 @@ buildRustPackage rec {
   ];
 
   buildInputs = [
-    openssl
+    openssl_1_0_2
     libssh
     zlib
+  ] ++ stdenv.lib.optionals (stdenv.isDarwin) [
+    curl
+    libiconv
+    CoreFoundation
+    Security
   ];
 
   meta = with stdenv.lib; {

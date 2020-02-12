@@ -1,35 +1,47 @@
-{ stdenv, fetchurl, stfl, sqlite, curl, gettext, pkgconfig, libxml2, json_c, ncurses
-, asciidoc, docbook_xml_dtd_45, libxslt, docbook_xml_xslt, libiconv, makeWrapper }:
+{ stdenv, rustPlatform, fetchFromGitHub, stfl, sqlite, curl, gettext, pkgconfig, libxml2, json_c, ncurses
+, asciidoc, docbook_xml_dtd_45, libxslt, docbook_xsl, libiconv, Security, makeWrapper }:
 
-stdenv.mkDerivation rec {
-  name = "newsboat-${version}";
-  version = "2.10.2";
+rustPlatform.buildRustPackage rec {
+  pname = "newsboat";
+  version = "2.18";
 
-  src = fetchurl {
-    url = "https://newsboat.org/releases/${version}/${name}.tar.xz";
-    sha256 = "1x4nxx1kvmrcm8jy73dvg56h4z15y3sach2vr13cw8rsbi7v99px";
+  src = fetchFromGitHub {
+    owner = "newsboat";
+    repo = "newsboat";
+    rev = "r${version}";
+    sha256 = "1bg2qjkzdawn4fnn0w7jhw1dk6191w8axnqra43z21pinfyim6da";
   };
 
-  prePatch = ''
+  cargoSha256 = "0q0iqd8y9rph8pwild5i2kv00h217a166c88hxpmbrigq9w960lp";
+
+  postPatch = ''
     substituteInPlace Makefile --replace "|| true" ""
     # Allow other ncurses versions on Darwin
     substituteInPlace config.sh \
       --replace "ncurses5.4" "ncurses"
   '';
 
-  nativeBuildInputs = [ pkgconfig asciidoc docbook_xml_dtd_45 libxslt docbook_xml_xslt ]
-                      ++ stdenv.lib.optional stdenv.isDarwin [ makeWrapper libiconv ];
+  nativeBuildInputs = [ pkgconfig asciidoc docbook_xml_dtd_45 libxslt docbook_xsl ]
+    ++ stdenv.lib.optionals stdenv.isDarwin [ makeWrapper libiconv ];
 
-  buildInputs = [ stfl sqlite curl gettext libxml2 json_c ncurses ];
+  buildInputs = [ stfl sqlite curl gettext libxml2 json_c ncurses ]
+    ++ stdenv.lib.optional stdenv.isDarwin Security;
 
-  makeFlags = [ "prefix=$(out)" ];
+  postBuild = ''
+    make
+  '';
+
+  NIX_CFLAGS_COMPILE = "-Wno-error=sign-compare"
+    + stdenv.lib.optionalString stdenv.isDarwin " -Wno-error=format-security";
 
   doCheck = true;
-  checkTarget = "test";
 
-  NIX_CFLAGS_COMPILE = "-Wno-error=sign-compare";
+  checkPhase = ''
+    make test
+  '';
 
   postInstall = ''
+    make prefix="$out" install
     cp -r contrib $out
   '' + stdenv.lib.optionalString stdenv.isDarwin ''
     for prog in $out/bin/*; do
@@ -39,7 +51,7 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     homepage    = https://newsboat.org/;
-    description = "A fork of Newsbeuter, an RSS/Atom feed reader for the text console.";
+    description = "A fork of Newsbeuter, an RSS/Atom feed reader for the text console";
     maintainers = with maintainers; [ dotlambda nicknovitski ];
     license     = licenses.mit;
     platforms   = platforms.unix;

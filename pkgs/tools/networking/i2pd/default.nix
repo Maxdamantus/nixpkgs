@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, fetchpatch
+{ stdenv, fetchFromGitHub
 , boost, zlib, openssl
 , upnpSupport ? true, miniupnpc ? null
 , aesniSupport ? false
@@ -8,16 +8,14 @@
 assert upnpSupport -> miniupnpc != null;
 
 stdenv.mkDerivation rec {
-
-  name = pname + "-" + version;
   pname = "i2pd";
-  version = "2.18.0";
+  version = "2.29.0";
 
   src = fetchFromGitHub {
     owner = "PurpleI2P";
     repo = pname;
     rev = version;
-    sha256 = "019psm86n4k7nzxhw7cnbw144gqni59sf35wiy58a6x6dabmvq8h";
+    sha256 = "1issg3aidwikk4g12sa8q81zzp0hd0g8wdy2dx4899z8yrscl300";
   };
 
   buildInputs = with stdenv.lib; [ boost zlib openssl ]

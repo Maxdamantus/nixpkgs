@@ -1,42 +1,72 @@
-{ stdenv, fetchFromGitHub, autoreconfHook, zlib, pkgconfig, libuuid }:
+{ stdenv, fetchFromGitHub, autoreconfHook, pkgconfig
+, CoreFoundation, IOKit, libossp_uuid
+, curl, libcap,  libuuid, lm_sensors, zlib
+, withCups ? false, cups
+, withDBengine ? true, libuv, lz4, judy
+, withIpmi ? (!stdenv.isDarwin), freeipmi
+, withNetfilter ? (!stdenv.isDarwin), libmnl, libnetfilter_acct
+, withSsl ? true, openssl
+, withDebug ? false
+}:
 
-stdenv.mkDerivation rec{
-  version = "1.9.0";
-  name = "netdata-${version}";
+with stdenv.lib;
+
+stdenv.mkDerivation rec {
+  version = "1.19.0";
+  pname = "netdata";
 
   src = fetchFromGitHub {
-    rev = "v${version}";
-    owner = "firehol";
+    owner = "netdata";
     repo = "netdata";
-    sha256 = "1vy0jz5lxw63b830l9jgf1qqhp41gzapyhdr5k1gwg3zghvlg10w";
+    rev = "v${version}";
+    sha256 = "1s6kzx4xh8b6v7ki8h2mfzprj5rxvlgx2md20cr8c0v81qpz3q3q";
   };
 
   nativeBuildInputs = [ autoreconfHook pkgconfig ];
-  buildInputs = [ zlib libuuid ];
+  buildInputs = [ curl.dev zlib.dev ]
+    ++ optionals stdenv.isDarwin [ CoreFoundation IOKit libossp_uuid ]
+    ++ optionals (!stdenv.isDarwin) [ libcap.dev libuuid.dev ]
+    ++ optionals withCups [ cups ]
+    ++ optionals withDBengine [ libuv lz4.dev judy ]
+    ++ optionals withIpmi [ freeipmi ]
+    ++ optionals withNetfilter [ libmnl libnetfilter_acct ]
+    ++ optionals withSsl [ openssl.dev ];
 
-  # Allow UI to load when running as non-root
-  patches = [ ./web_access.patch ];
+  patches = [
+    ./no-files-in-etc-and-var.patch
+  ];
 
-  # Build will fail trying to create /var/{cache,lib,log}/netdata without this
-  postPatch = ''
-   sed -i '/dist_.*_DATA = \.keep/d' src/Makefile.am
+  NIX_CFLAGS_COMPILE = optionalString withDebug "-O1 -ggdb -DNETDATA_INTERNAL_CHECKS=1";
+
+  postInstall = optionalString (!stdenv.isDarwin) ''
+    # rename this plugin so netdata will look for setuid wrapper
+    mv $out/libexec/netdata/plugins.d/apps.plugin \
+       $out/libexec/netdata/plugins.d/apps.plugin.org
+    ${optionalString withIpmi ''
+      mv $out/libexec/netdata/plugins.d/freeipmi.plugin \
+         $out/libexec/netdata/plugins.d/freeipmi.plugin.org
+    ''}
+  '';
+
+  preConfigure =  optionalString (!stdenv.isDarwin) ''
+    substituteInPlace collectors/python.d.plugin/python_modules/third_party/lm_sensors.py \
+      --replace 'ctypes.util.find_library("sensors")' '"${lm_sensors.out}/lib/libsensors${stdenv.hostPlatform.extensions.sharedLibrary}"'
   '';
 
   configureFlags = [
     "--localstatedir=/var"
+    "--sysconfdir=/etc"
   ];
 
-  # App fails on runtime if the default config file is not detected
-  # The upstream installer does prepare an empty file too
-  postInstall = ''
-    touch $out/etc/netdata/netdata.conf
+  postFixup = ''
+    rm -r $out/sbin
   '';
 
-  meta = with stdenv.lib; {
+  meta = {
     description = "Real-time performance monitoring tool";
-    homepage = http://netdata.firehol.org;
+    homepage = https://my-netdata.io/;
     license = licenses.gpl3;
-    platforms = platforms.linux;
+    platforms = platforms.unix;
     maintainers = [ maintainers.lethalman ];
   };
 

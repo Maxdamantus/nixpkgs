@@ -1,20 +1,15 @@
-{ stdenv, buildPythonPackage, fetchurl, pytest }:
+{ stdenv, buildPythonPackage, fetchPypi, idna }:
 
 buildPythonPackage rec {
   pname = "hyperlink";
-  version = "17.3.1";
-  name = pname + "-" + version;
+  version = "19.0.0";
 
-  src = fetchurl {
-    url = "mirror://pypi/h/hyperlink/${name}.tar.gz";
-    sha256 = "bc4ffdbde9bdad204d507bd8f554f16bba82dd356f6130cb16f41422909c33bc";
+  src = fetchPypi {
+    inherit pname version;
+    sha256 = "4288e34705da077fada1111a24a0aa08bb1e76699c9ce49876af722441845654";
   };
 
-  checkInputs = [ pytest ];
-
-  checkPhase = ''
-    py.test $out
-  '';
+  propagatedBuildInputs = [ idna ];
 
   meta = with stdenv.lib; {
     description = "A featureful, correct URL for Python";

@@ -14,11 +14,10 @@ with import ./release-lib.nix { inherit supportedSystems; };
     officialRelease = false;
   };
 
-} // (mapTestOn (rec {
+} // (mapTestOn ({
 
   aspell = all;
   at = linux;
-  atlas = linux;
   autoconf = all;
   automake = all;
   avahi = unix; # Cygwin builds fail
@@ -48,7 +47,6 @@ with import ./release-lib.nix { inherit supportedSystems; };
   gcj = linux;
   glibc = linux;
   glibcLocales = linux;
-  gnat = linux;
   gnugrep = all;
   gnum4 = all;
   gnumake = all;
@@ -110,7 +108,8 @@ with import ./release-lib.nix { inherit supportedSystems; };
   mpg321 = linux;
   mutt = linux;
   mysql = linux;
-  netcat = all;
+  # netcat broken on darwin
+  netcat = linux;
   nfs-utils = linux;
   nix = all;
   nixUnstable = all;
@@ -157,13 +156,12 @@ with import ./release-lib.nix { inherit supportedSystems; };
   time = linux;
   tinycc = linux;
   udev = linux;
-  unar = linux;
   unzip = all;
   usbutils = linux;
   utillinux = linux;
   utillinuxMinimal = linux;
   w3m = all;
-  webkit = linux;
+  webkitgtk = linux;
   wget = all;
   which = all;
   wicd = linux;

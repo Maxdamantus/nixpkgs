@@ -1,5 +1,4 @@
 { lib
-, stdenv
 , buildPythonPackage
 , fetchPypi
 , mozinfo
@@ -7,12 +6,11 @@
 
 buildPythonPackage rec {
   pname = "mozprocess";
-  version = "0.25";
-  name = "${pname}-${version}";
+  version = "1.0.0";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "0lfflwjkwvc8bqvsgdib3b78w2pms8nharh3sc3zgsrmqb1mbzks";
+    sha256 = "a0fd8367e663d3cac74ee46bffa789667bc8d52f242d81a14522205fa6650cb2";
   };
 
   propagatedBuildInputs = [ mozinfo ];

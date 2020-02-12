@@ -1,28 +1,35 @@
-{ stdenv, fetchurl, pkgconfig, perl, glib, libintlOrEmpty, gobjectIntrospection, gnome3 }:
+{ stdenv, fetchurl, meson, ninja, gettext, pkgconfig, glib
+, fixDarwinDylibNames, gobject-introspection, gnome3
+}:
 
 let
   pname = "atk";
-  version = "2.26.1";
+  version = "2.34.1";
 in
+
 stdenv.mkDerivation rec {
   name = "${pname}-${version}";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/${pname}/${gnome3.versionBranch version}/${name}.tar.xz";
-    sha256 = "1jwpx8az0iifw176dc2hl4mmg6gvxzxdkd1qvg4ds7c5hdmzy07g";
+    url = "mirror://gnome/sources/${pname}/${stdenv.lib.versions.majorMinor version}/${name}.tar.xz";
+    sha256 = "1jwp16r6p5z66k4b2v8zlzhyshhwlmyi27ippkrgqr8jsary7w6l";
   };
-
-  enableParallelBuilding = true;
 
   outputs = [ "out" "dev" ];
 
-  buildInputs = libintlOrEmpty;
+  buildInputs = stdenv.lib.optional stdenv.isDarwin fixDarwinDylibNames;
 
-  nativeBuildInputs = [ pkgconfig perl gobjectIntrospection ];
+  nativeBuildInputs = [ meson ninja pkgconfig gettext gobject-introspection ];
 
   propagatedBuildInputs = [
     # Required by atk.pc
     glib
+  ];
+
+  patches = [
+    # meson builds an incorrect .pc file
+    # glib should be Requires not Requires.private
+    ./fix_pc.patch
   ];
 
   doCheck = true;

@@ -1,29 +1,30 @@
 { stdenv, fetchurl, perl, file, nettools, iputils, iproute, makeWrapper
 , coreutils, gnused, openldap ? null
+, buildPackages, lib
 }:
 
 stdenv.mkDerivation rec {
-  name = "dhcp-${version}";
-  version = "4.3.4";
+  pname = "dhcp";
+  version = "4.4.2";
 
   src = fetchurl {
-    url = "http://ftp.isc.org/isc/dhcp/${version}/${name}.tar.gz";
-    sha256 = "0zk0imll6bfyp9p4ndn8h6s4ifijnw5bhixswifr5rnk7pp5l4gm";
+    url = "https://ftp.isc.org/isc/dhcp/${version}/${pname}-${version}.tar.gz";
+    sha256 = "08a5003zdxgl41b29zjkxa92h2i40zyjgxg0npvnhpkfl5jcsz0s";
   };
 
   patches =
-    [ # Don't bring down interfaces, because wpa_supplicant doesn't
-      # recover when the wlan interface goes down.  Instead just flush
-      # all addresses, routes and neighbours of the interface.
-      ./flush-if.patch
-
+    [
       # Make sure that the hostname gets set on reboot.  Without this
       # patch, the hostname doesn't get set properly if the old
       # hostname (i.e. before reboot) is equal to the new hostname.
       ./set-hostname.patch
     ];
 
-  buildInputs = [ perl makeWrapper openldap ];
+  nativeBuildInputs = [ perl ];
+
+  buildInputs = [ makeWrapper openldap ];
+
+  depsBuildBuild = [ buildPackages.stdenv.cc ];
 
   configureFlags = [
     "--enable-failover"
@@ -35,9 +36,15 @@ stdenv.mkDerivation rec {
     "--enable-early-chroot"
     "--sysconfdir=/etc"
     "--localstatedir=/var"
-  ] ++ stdenv.lib.optionals (openldap != null) [ "--with-ldap" "--with-ldapcrypto" ];
+  ] ++ lib.optional stdenv.isLinux "--with-randomdev=/dev/random"
+    ++ stdenv.lib.optionals (openldap != null) [ "--with-ldap" "--with-ldapcrypto" ];
 
-  NIX_CFLAGS_COMPILE = [ "-Wno-error=pointer-compare" ];
+  NIX_CFLAGS_COMPILE = builtins.toString [
+    "-Wno-error=pointer-compare"
+    "-Wno-error=format-truncation"
+    "-Wno-error=stringop-truncation"
+    "-Wno-error=format-overflow"
+  ];
 
   installFlags = [ "DESTDIR=\${out}" ];
 
@@ -61,6 +68,8 @@ stdenv.mkDerivation rec {
       substituteInPlace configure --replace "/usr/bin/file" "${file}/bin/file"
       sed -i "includes/dhcpd.h" \
 	-"es|^ *#define \+_PATH_DHCLIENT_SCRIPT.*$|#define _PATH_DHCLIENT_SCRIPT \"$out/sbin/dhclient-script\"|g"
+
+      export AR='${stdenv.cc.bintools.bintools}/bin/${stdenv.cc.targetPrefix}ar'
     '';
 
   meta = with stdenv.lib; {
@@ -73,9 +82,8 @@ stdenv.mkDerivation rec {
       client, and relay agent.
    '';
 
-    homepage = http://www.isc.org/products/DHCP/;
+    homepage = "https://www.isc.org/dhcp/";
     license = licenses.isc;
     platforms = platforms.unix;
-    maintainers = with maintainers; [ wkennington ];
   };
 }

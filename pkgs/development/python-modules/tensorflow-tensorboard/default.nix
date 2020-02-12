@@ -1,37 +1,63 @@
-{ stdenv, lib, fetchPypi, buildPythonPackage, isPy3k
-, bleach_1_5_0
+{ lib, fetchPypi, buildPythonPackage, isPy3k
 , numpy
+, wheel
 , werkzeug
 , protobuf
+, grpcio
 , markdown
 , futures
+, absl-py
 }:
 
-# tensorflow is built from a downloaded wheel, because
-# https://github.com/tensorflow/tensorboard/issues/719
-# blocks buildBazelPackage.
+# tensorflow/tensorboard is built from a downloaded wheel, because
+# https://github.com/tensorflow/tensorboard/issues/719 blocks
+# buildBazelPackage.
 
 buildPythonPackage rec {
   pname = "tensorflow-tensorboard";
-  version = "1.5.1";
-  name = "${pname}-${version}";
+  version = "1.15.0";
   format = "wheel";
 
   src = fetchPypi ({
-    pname = "tensorflow_tensorboard";
+    pname = "tensorboard";
     inherit version;
     format = "wheel";
   } // (if isPy3k then {
     python = "py3";
-    sha256 = "1cydgvrr0s05xqz1v9z2wdiv60gzbs8wv9wvbflw5700a2llb63l";
+    sha256 = "1g62i3nrgp8q9wfsyqqjkkfnsz7x2k018c26kdh527h1yrjjrbac";
   } else {
     python = "py2";
-    sha256 = "0dhljddlirq6nr84zg4yrk5k69gj3x2abb6wg3crgrparb6qbya7";
+    sha256 = "0l3zc8j2sh7h1z4qpy8kfvclv3kzndri55p10i42q6xahs9phav1";
   }));
 
-  propagatedBuildInputs = [ bleach_1_5_0 numpy werkzeug protobuf markdown ] ++ lib.optional (!isPy3k) futures;
+  propagatedBuildInputs = [
+    numpy
+    werkzeug
+    protobuf
+    markdown
+    grpcio
+    absl-py
+    # not declared in install_requires, but used at runtime
+    # https://github.com/NixOS/nixpkgs/issues/73840
+    wheel
+  ] ++ lib.optional (!isPy3k) futures;
 
-  meta = with stdenv.lib; {
+  # in the absence of a real test suite, run cli and imports
+  checkPhase = ''
+    $out/bin/tensorboard --help > /dev/null
+  '';
+
+  pythonImportsCheck = [
+    "tensorboard"
+    "tensorboard.backend"
+    "tensorboard.compat"
+    "tensorboard.data"
+    "tensorboard.plugins"
+    "tensorboard.summary"
+    "tensorboard.util"
+  ];
+
+  meta = with lib; {
     description = "TensorFlow's Visualization Toolkit";
     homepage = http://tensorflow.org;
     license = licenses.asl20;

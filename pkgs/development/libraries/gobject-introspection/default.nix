@@ -1,37 +1,38 @@
-{ stdenv, fetchurl, glib, flex, bison, pkgconfig, libffi, python
-, libintlOrEmpty, cctools, cairo, gnome3
+{ stdenv, fetchurl, glib, flex, bison, meson, ninja, pkgconfig, libffi, python3
+, libintl, cctools, cairo, gnome3, glibcLocales
 , substituteAll, nixStoreDir ? builtins.storeDir
+, x11Support ? true
 }:
-# now that gobjectIntrospection creates large .gir files (eg gtk3 case)
+# now that gobject-introspection creates large .gir files (eg gtk3 case)
 # it may be worth thinking about using multiple derivation outputs
 # In that case its about 6MB which could be separated
 
 let
   pname = "gobject-introspection";
-  version = "1.54.1";
+  version = "1.62.0";
 in
 with stdenv.lib;
 stdenv.mkDerivation rec {
   name = "${pname}-${version}";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/${pname}/${gnome3.versionBranch version}/${name}.tar.xz";
-    sha256 = "0zl7pfkzkm07733391b4f3cwjbnvb1nwvpmajf5bajh6bxgfv3dq";
+    url = "mirror://gnome/sources/${pname}/${stdenv.lib.versions.majorMinor version}/${name}.tar.xz";
+    sha256 = "18lhglg9v6y83lhqzyifc1z0wrlawzrhzzxx0a3h1g7xaz97xvmi";
   };
 
-  outputs = [ "out" "dev" ];
+  outputs = [ "out" "dev" "man" ];
   outputBin = "dev";
-  outputMan = "dev"; # tiny pages
 
-  nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [ flex bison python setupHook/*move .gir*/ ]
-    ++ libintlOrEmpty
+  LC_ALL = "en_US.UTF-8"; # for tests
+
+  nativeBuildInputs = [ meson ninja pkgconfig libintl glibcLocales ];
+  buildInputs = [ flex bison python3 setupHook/*move .gir*/ ]
     ++ stdenv.lib.optional stdenv.isDarwin cctools;
   propagatedBuildInputs = [ libffi glib ];
 
-  preConfigure = ''
-    sed 's|/usr/bin/env ||' -i tools/g-ir-tool-template.in
-  '';
+  mesonFlags = [
+    "--datadir=${placeholder "dev"}/share"
+  ];
 
   # outputs TODO: share/gobject-introspection-1.0/tests is needed during build
   # by pygobject3 (and maybe others), but it's only searched in $out
@@ -40,20 +41,24 @@ stdenv.mkDerivation rec {
 
   patches = [
     (substituteAll {
+      src = ./test_shlibs.patch;
+      inherit nixStoreDir;
+    })
+    (substituteAll {
       src = ./absolute_shlib_path.patch;
       inherit nixStoreDir;
     })
-    # https://github.com/NixOS/nixpkgs/issues/34080
+  ] ++ stdenv.lib.optional x11Support # https://github.com/NixOS/nixpkgs/issues/34080
     (substituteAll {
       src = ./absolute_gir_path.patch;
       cairoLib = "${getLib cairo}/lib";
-    })
-  ];
+    });
+
+  doCheck = !stdenv.isAarch64;
 
   passthru = {
     updateScript = gnome3.updateScript {
       packageName = pname;
-      attrPath = "gobjectIntrospection";
     };
   };
 
@@ -62,6 +67,7 @@ stdenv.mkDerivation rec {
     homepage    = http://live.gnome.org/GObjectIntrospection;
     maintainers = with maintainers; [ lovek323 lethalman ];
     platforms   = platforms.unix;
+    license = with licenses; [ gpl2 lgpl2 ];
 
     longDescription = ''
       GObject introspection is a middleware layer between C libraries (using

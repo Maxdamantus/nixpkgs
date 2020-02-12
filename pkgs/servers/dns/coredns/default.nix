@@ -1,25 +1,24 @@
-{ stdenv, buildGoPackage, fetchFromGitHub }:
+{ stdenv, buildGoModule, fetchFromGitHub }:
 
-buildGoPackage rec {
-  name = "coredns-${version}";
-  version = "005";
+buildGoModule rec {
+  pname = "coredns";
+  version = "1.6.6";
 
-  goPackagePath = "github.com/miekg/coredns";
-  subPackages = [ "." ];
+  goPackagePath = "github.com/coredns/coredns";
 
   src = fetchFromGitHub {
-    owner = "miekg";
+    owner = "coredns";
     repo = "coredns";
     rev = "v${version}";
-    sha256 = "11wvy3xp9in5ny6h7hp24dq6asc013vrwc6bqiky83dlzasjwkf6";
+    sha256 = "1x8sgchp0kkk5xdharjrq29qxgv1mdzrw3f12s2kchgqf1m6r0sx";
   };
 
-  goDeps = ./deps.nix;
+  modSha256 = "10ljggg1g5x00gpgzc5m29n1k5akf0s0g3hkdh8adcbrcz0pgr5c";
 
   meta = with stdenv.lib; {
-    homepage = https://coredns.io;
+    homepage = "https://coredns.io";
     description = "A DNS server that runs middleware";
     license = licenses.asl20;
-    maintainers = [ maintainers.rushmorem maintainers.rtreffer ];
+    maintainers = with maintainers; [ rushmorem rtreffer deltaevo ];
   };
 }

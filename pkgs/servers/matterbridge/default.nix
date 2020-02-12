@@ -1,14 +1,15 @@
-{ stdenv, buildGoPackage, fetchurl }:
+{ stdenv, buildGoModule, fetchurl }:
 
-buildGoPackage rec {
-  name = "matterbridge-${version}";
-  version = "1.7.1";
+buildGoModule rec {
+  pname = "matterbridge";
+  version = "1.16.3";
 
   goPackagePath = "github.com/42wim/matterbridge";
+  modSha256 = "sha256-Q6R6AhAELirFijw5ntyjly46HCzFMpLGSJYfv864gt0=";
 
   src = fetchurl {
     url = "https://github.com/42wim/matterbridge/archive/v${version}.tar.gz";
-    sha256 = "0ajc7xswmwhc2xn937sv3b76s8hblfn9x9rj5825hi3d3s8zqq88";
+    sha256 = "sha256-VAbZSXilmmd2z2bK4/UZzOrjohDVcJHah9t3DE1mtOE=";
   };
 
   meta = with stdenv.lib; {

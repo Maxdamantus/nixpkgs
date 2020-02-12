@@ -7,24 +7,23 @@
 , isPy3k
 , numpy
 , llvmlite
-, argparse
 , funcsigs
 , singledispatch
 , libcxx
 }:
 
 buildPythonPackage rec {
-  version = "0.36.2";
+  version = "0.48.0";
   pname = "numba";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "d61597808ce511e81b64e32da664f52beb7d947bf834dde8b8b60b29d205e5c2";
+    sha256 = "9d21bc77e67006b5723052840c88cc59248e079a907cc68f1a1a264e1eaba017";
   };
 
   NIX_CFLAGS_COMPILE = stdenv.lib.optionalString stdenv.isDarwin "-I${libcxx}/include/c++/v1";
 
-  propagatedBuildInputs = [numpy llvmlite argparse] ++ stdenv.lib.optional (!isPy3k) funcsigs ++ stdenv.lib.optional (isPy27 || isPy33) singledispatch;
+  propagatedBuildInputs = [numpy llvmlite] ++ stdenv.lib.optional (!isPy3k) funcsigs ++ stdenv.lib.optional (isPy27 || isPy33) singledispatch;
 
   # Copy test script into $out and run the test suite.
   checkPhase = ''

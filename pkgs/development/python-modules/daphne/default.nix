@@ -1,18 +1,39 @@
-{ stdenv, buildPythonPackage, fetchPypi,
-  asgiref, autobahn, twisted, hypothesis
+{ stdenv, buildPythonPackage, isPy3k, fetchFromGitHub, fetchpatch
+, asgiref, autobahn, twisted, pytestrunner
+, hypothesis, pytest, pytest-asyncio
 }:
 buildPythonPackage rec {
   pname = "daphne";
-  name = "${pname}-${version}";
-  version = "2.1.0";
+  version = "2.3.0";
 
-  src = fetchPypi {
-    inherit pname version;
-    sha256 = "13jv8jn8nf522smwpqdy4lq6cpd06fcgwvgl67i622rid51fj5gb";
+  disabled = !isPy3k;
+
+  src = fetchFromGitHub {
+    owner = "django";
+    repo = pname;
+    rev = version;
+    sha256 = "020afrvbnid13gkgjpqznl025zpynisa96kybmf8q7m3wp1iq1nl";
   };
 
-  buildInputs = [ hypothesis ];
+  patches = [
+    # Fix compatibility with Hypothesis 4. See: https://github.com/django/daphne/pull/261
+    (fetchpatch {
+      url = "https://github.com/django/daphne/commit/2df5096c5b63a791c209e12198ad89c998869efd.patch";
+      sha256 = "0046krzcn02mihqmsjd80kk5h5flv44nqxpapa17g6dvq3jnb97n";
+    })
+  ];
+
+  nativeBuildInputs = [ pytestrunner ];
+
   propagatedBuildInputs = [ asgiref autobahn twisted ];
+
+  checkInputs = [ hypothesis pytest pytest-asyncio ];
+
+  doCheck = !stdenv.isDarwin; # most tests fail on darwin
+
+  checkPhase = ''
+    py.test
+  '';
 
   meta = with stdenv.lib; {
     description = "Django ASGI (HTTP/WebSocket) server";

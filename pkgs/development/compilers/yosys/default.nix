@@ -1,51 +1,64 @@
-{ stdenv, fetchFromGitHub, fetchFromBitbucket
-, pkgconfig, tcl, readline, libffi, python3, bison, flex
+{ stdenv
+, abc-verifier
+, bison
+, fetchFromGitHub
+, flex
+, libffi
+, pkgconfig
+, protobuf
+, python3
+, readline
+, tcl
+, verilog
+, zlib
 }:
 
-with builtins;
-
 stdenv.mkDerivation rec {
-  name = "yosys-${version}";
-  version = "2018.03.07";
+  pname = "yosys";
+  version = "2020.02.07";
 
-  srcs = [
-    (fetchFromGitHub {
-      owner  = "yosyshq";
-      repo   = "yosys";
-      rev    = "8b604004dae31f7f3120685dd05d16a4bace904a";
-      sha256 = "18i4l5rka3l9lg8cdpigprw80im293j3bmv0zab1gxf3rhbjpcb7";
-      name   = "yosys";
-    })
-
-    # NOTE: the version of abc used here is synchronized with
-    # the one in the yosys Makefile of the version above;
-    # keep them the same for quality purposes.
-    (fetchFromBitbucket {
-      owner  = "alanmi";
-      repo   = "abc";
-      rev    = "6e3c24b3308a";
-      sha256 = "1i4wv0si4fb6dpv2yrpkp588mdlfrnx2s02q2fgra5apdm54c53w";
-      name   = "yosys-abc";
-    })
-  ];
-  sourceRoot = "yosys";
+  src = fetchFromGitHub {
+    owner  = "YosysHQ";
+    repo   = "yosys";
+    rev    = "2e8d6ec0b06b4e51e222c15c8049130bc264ae57";
+    sha256 = "0asnqhxs5r5r2xmvsk9pbgyqgk53j1snh7c9qizcppn4csapda81";
+  };
 
   enableParallelBuilding = true;
   nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [ tcl readline libffi python3 bison flex ];
+  buildInputs = [ tcl readline libffi python3 bison flex protobuf zlib ];
+
+  makeFlags = [ "ENABLE_PROTOBUF=1" "PREFIX=${placeholder "out"}"];
 
   patchPhase = ''
     substituteInPlace ./Makefile \
-      --replace 'echo UNKNOWN' 'echo ${substring 0 10 (elemAt srcs 0).rev}'
+      --replace 'CXX = clang' "" \
+      --replace 'LD = clang++' 'LD = $(CXX)' \
+      --replace 'CXX = gcc' "" \
+      --replace 'LD = gcc' 'LD = $(CXX)' \
+      --replace 'ABCMKARGS = CC="$(CXX)" CXX="$(CXX)"' 'ABCMKARGS =' \
+      --replace 'echo UNKNOWN' 'echo ${builtins.substring 0 10 src.rev}'
+    patchShebangs tests
   '';
 
-  preBuild = ''
-    chmod -R u+w ../yosys-abc
-    ln -s ../yosys-abc abc
-    make config-gcc
-    echo 'ABCREV := default' >> Makefile.conf
-    makeFlags="PREFIX=$out $makeFlags"
+  preBuild = let
+    shortAbcRev = builtins.substring 0 7 abc-verifier.rev;
+  in ''
+    chmod -R u+w .
+    make config-${if stdenv.cc.isClang or false then "clang" else "gcc"}
+    echo 'ABCEXTERNAL = ${abc-verifier}/bin/abc' >> Makefile.conf
+
+    # we have to do this ourselves for some reason...
+    (cd misc && ${protobuf}/bin/protoc --cpp_out ../backends/protobuf/ ./yosys.proto)
+
+    if ! grep -q "ABCREV = ${shortAbcRev}" Makefile;then
+      echo "yosys isn't compatible with the provided abc (${shortAbcRev}), failing."
+      exit 1
+    fi
   '';
+
+  doCheck = true;
+  checkInputs = [ verilog ];
 
   meta = {
     description = "Framework for RTL synthesis tools";
@@ -60,7 +73,7 @@ stdenv.mkDerivation rec {
     '';
     homepage    = http://www.clifford.at/yosys/;
     license     = stdenv.lib.licenses.isc;
-    maintainers = with stdenv.lib.maintainers; [ shell thoughtpolice ];
-    platforms   = stdenv.lib.platforms.linux;
+    maintainers = with stdenv.lib.maintainers; [ shell thoughtpolice emily ];
+    platforms   = stdenv.lib.platforms.all;
   };
 }

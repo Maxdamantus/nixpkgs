@@ -1,9 +1,9 @@
-import ./make-test.nix ({ pkgs, ...} : {
+import ./make-test-python.nix ({ pkgs, ...} : {
   name = "initrd-network";
 
   meta.maintainers = [ pkgs.stdenv.lib.maintainers.eelco ];
 
-  machine = { config, pkgs, ... }: {
+  machine = { ... }: {
     imports = [ ../modules/profiles/minimal.nix ];
     boot.initrd.network.enable = true;
     boot.initrd.network.postCommands =
@@ -15,8 +15,8 @@ import ./make-test.nix ({ pkgs, ...} : {
 
   testScript =
     ''
-      startAll;
-      $machine->waitForUnit("multi-user.target");
-      $machine->succeed("ip link >&2");
+      start_all()
+      machine.wait_for_unit("multi-user.target")
+      machine.succeed("ip link >&2")
     '';
 })

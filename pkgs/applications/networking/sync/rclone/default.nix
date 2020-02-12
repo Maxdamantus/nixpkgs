@@ -1,17 +1,19 @@
 { stdenv, buildGoPackage, fetchFromGitHub }:
 
 buildGoPackage rec {
-  name = "rclone-${version}";
-  version = "1.39";
-
-  goPackagePath = "github.com/ncw/rclone";
+  pname = "rclone";
+  version = "1.50.2";
 
   src = fetchFromGitHub {
-    owner = "ncw";
-    repo = "rclone";
+    owner = pname;
+    repo = pname;
     rev = "v${version}";
-    sha256 = "1x9qxhqkbyd7kd52ai9p996ppslh73xarn5w4ljaa97wwm5vwwsg";
+    sha256 = "0yaspkh88q8i58i8g8mm6sqb75hczavz2lvzdd1iif1bqgi6b5fz";
   };
+
+  goPackagePath = "github.com/rclone/rclone";
+
+  subPackages = [ "." ];
 
   outputs = [ "bin" "out" "man" ];
 
@@ -21,7 +23,7 @@ buildGoPackage rec {
 
   meta = with stdenv.lib; {
     description = "Command line program to sync files and directories to and from major cloud storage";
-    homepage = http://rclone.org;
+    homepage = https://rclone.org;
     license = licenses.mit;
     maintainers = with maintainers; [ danielfullmer ];
     platforms = platforms.all;

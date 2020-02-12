@@ -1,12 +1,12 @@
 { stdenv, fetchurl, libxslt, docbook_xsl, libcap }:
 
 stdenv.mkDerivation rec {
-  name = "bubblewrap-${version}";
-  version = "0.2.0";
+  pname = "bubblewrap";
+  version = "0.4.0";
 
   src = fetchurl {
-    url = "https://github.com/projectatomic/bubblewrap/releases/download/v${version}/${name}.tar.xz";
-    sha256 = "0ahw30ngpclk3ssa81cb7ydc6a4xc5dpqn6kmxfpc9xr30vimdnc";
+    url = "https://github.com/projectatomic/bubblewrap/releases/download/v${version}/${pname}-${version}.tar.xz";
+    sha256 = "08r0f4c3fjkb4zjrb4kkax1zfcgcgic702vb62sjjw5xfhppvzp5";
   };
 
   nativeBuildInputs = [ libcap libxslt docbook_xsl ];
@@ -15,6 +15,6 @@ stdenv.mkDerivation rec {
     description = "Unprivileged sandboxing tool";
     homepage = https://github.com/projectatomic/bubblewrap;
     license = licenses.lgpl2Plus;
-    maintainers = with maintainers; [ konimex ];
+    maintainers = with maintainers; [ ];
   };
 }

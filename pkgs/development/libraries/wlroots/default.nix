@@ -1,42 +1,52 @@
-{ stdenv, fetchFromGitHub, meson, ninja, pkgconfig
+{ stdenv, fetchFromGitHub, meson, ninja, pkgconfig, fetchpatch
 , wayland, libGL, wayland-protocols, libinput, libxkbcommon, pixman
-, xcbutilwm, libX11, libcap, xcbutilimage
+, xcbutilwm, libX11, libcap, xcbutilimage, xcbutilerrors, mesa
+, libpng, ffmpeg_4
 }:
 
-let pname = "wlroots";
-    version = "unstable-2017-12-22";
-in stdenv.mkDerivation rec {
-  name = "${pname}-${version}";
+stdenv.mkDerivation rec {
+  pname = "wlroots";
+  version = "0.10.0";
 
   src = fetchFromGitHub {
     owner = "swaywm";
     repo = "wlroots";
-    rev = "0a370c529806077a11638e7fa856d5fbb539496b";
-    sha256 = "0h3i0psn5595dncv53l5m2mf13k9wcv3qi16vla5ckpskykc0xx6";
+    rev = version;
+    sha256 = "0c0q1p9yss5kx4430ik3n89drqpmm2bvgl8fjlf6prac1a7xzqn8";
   };
 
-  # TODO: Temporary workaround for compilation errors
-  patches = [ ./libdrm.patch ]; #./no-werror.patch
-
-  # $out for the library and $bin for rootston
-  outputs = [ "out" "bin" ];
+  # $out for the library and $examples for the example programs (in examples):
+  outputs = [ "out" "examples" ];
 
   nativeBuildInputs = [ meson ninja pkgconfig ];
 
   buildInputs = [
     wayland libGL wayland-protocols libinput libxkbcommon pixman
-    xcbutilwm libX11 libcap xcbutilimage
+    xcbutilwm libX11 libcap xcbutilimage xcbutilerrors mesa
+    libpng ffmpeg_4
   ];
 
-  # Install rootston (the reference compositor) to $bin
+  mesonFlags = [
+    "-Dlibcap=enabled" "-Dlogind=enabled" "-Dxwayland=enabled" "-Dx11-backend=enabled"
+    "-Dxcb-icccm=enabled" "-Dxcb-errors=enabled"
+  ];
+
   postInstall = ''
-    mkdir -p $bin/bin
-    cp rootston/rootston $bin/bin/
-    mkdir $bin/lib
-    cp libwlroots.so $bin/lib/
-    patchelf --set-rpath "$bin/lib:${stdenv.lib.makeLibraryPath buildInputs}" $bin/bin/rootston
-    mkdir $bin/etc
-    cp ../rootston/rootston.ini.example $bin/etc/rootston.ini
+    # Copy the library to $examples
+    mkdir -p $examples/lib
+    cp -P libwlroots* $examples/lib/
+  '';
+
+  postFixup = ''
+    # Install ALL example programs to $examples:
+    # screencopy dmabuf-capture input-inhibitor layer-shell idle-inhibit idle
+    # screenshot output-layout multi-pointer rotation tablet touch pointer
+    # simple
+    mkdir -p $examples/bin
+    cd ./examples
+    for binary in $(find . -executable -type f -printf '%P\n' | grep -vE '\.so'); do
+      cp "$binary" "$examples/bin/wlroots-$binary"
+    done
   '';
 
   meta = with stdenv.lib; {

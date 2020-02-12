@@ -1,25 +1,35 @@
-{ lib, stdenv, fetchurl, fetchpatch, writeText, conf ? null }:
+{ lib, stdenv, fetchurl, writeText, conf ? null }:
 
-let configFile = writeText "riot-config.json" conf; in
+# Note for maintainers:
+# Versions of `riot-web` and `riot-desktop` should be kept in sync.
+
 stdenv.mkDerivation rec {
-  name= "riot-web-${version}";
-  version = "0.13.5";
+  pname = "riot-web";
+  version = "1.5.8";
 
   src = fetchurl {
     url = "https://github.com/vector-im/riot-web/releases/download/v${version}/riot-v${version}.tar.gz";
-    sha256 = "1ap62ksi3dg7qijxxysjpnlmngzgh2jdldvb8s1jx14avanccch6";
+    sha256 = "112zjlmxy2s8qcd227laf1lfvbbwwcipn51xb779hy2dci48kpkx";
   };
 
-  installPhase = ''
+  installPhase = let
+    configFile = if (conf != null)
+      then writeText "riot-config.json" conf
+      else "$out/config.sample.json";
+  in ''
+    runHook preInstall
+
     mkdir -p $out/
     cp -R . $out/
-    ${lib.optionalString (conf != null) "ln -s ${configFile} $out/config.json"}
+    ln -s ${configFile} $out/config.json
+
+    runHook postInstall
   '';
 
   meta = {
     description = "A glossy Matrix collaboration client for the web";
     homepage = http://riot.im/;
-    maintainers = with stdenv.lib.maintainers; [ bachp ];
+    maintainers = with stdenv.lib.maintainers; [ bachp pacien ];
     license = stdenv.lib.licenses.asl20;
     platforms = stdenv.lib.platforms.all;
     hydraPlatforms = [];

@@ -1,4 +1,4 @@
-import ../make-test.nix ({ pkgs, lib, ... }:
+import ../make-test-python.nix ({ lib, ... }:
 
 {
   name = "initrd-network-ssh";
@@ -6,9 +6,9 @@ import ../make-test.nix ({ pkgs, lib, ... }:
     maintainers = [ willibutz ];
   };
 
-  nodes = with lib; rec {
+  nodes = with lib; {
     server =
-      { config, pkgs, ... }:
+      { config, ... }:
       {
         boot.kernelParams = [
           "ip=${config.networking.primaryIPAddress}:::255.255.255.0::eth1:none"
@@ -33,27 +33,33 @@ import ../make-test.nix ({ pkgs, lib, ... }:
       };
 
     client =
-      { config, pkgs, ... }:
+      { config, ... }:
       {
-        environment.etc.knownHosts = {
-          text = concatStrings [
-            "server,"
-            "${toString (head (splitString " " (
-              toString (elemAt (splitString "\n" config.networking.extraHosts) 2)
-            )))} "
-            "${readFile ./dropbear.pub}"
-          ];
+        environment.etc = {
+          knownHosts = {
+            text = concatStrings [
+              "server,"
+              "${toString (head (splitString " " (
+                toString (elemAt (splitString "\n" config.networking.extraHosts) 2)
+              )))} "
+              "${readFile ./dropbear.pub}"
+            ];
+          };
+          sshKey = {
+            source = ./openssh.priv; # dont use this anywhere else
+            mode = "0600";
+          };
         };
       };
   };
 
   testScript = ''
-    startAll;
-    $client->waitForUnit("network.target");
-    $client->copyFileFromHost("${./openssh.priv}","/etc/sshKey");
-    $client->succeed("chmod 0600 /etc/sshKey");
-    $client->waitUntilSucceeds("ping -c 1 server");
-    $client->succeed("ssh -i /etc/sshKey -o UserKnownHostsFile=/etc/knownHosts server 'touch /fnord'");
-    $client->shutdown;
+    start_all()
+    client.wait_for_unit("network.target")
+    client.wait_until_succeeds("ping -c 1 server")
+    client.succeed(
+        "ssh -i /etc/sshKey -o UserKnownHostsFile=/etc/knownHosts server 'touch /fnord'"
+    )
+    client.shutdown()
   '';
 })

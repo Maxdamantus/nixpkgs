@@ -5,19 +5,19 @@ let
   arch =
     if stdenv.isAarch64
     then "arm64"
-    else if stdenv.isArm
+    else if stdenv.isAarch32
     then "arm_armhf_raspberry_pi"
     else if stdenv.is64bit
     then "x86_64"
     else "x86";
 in
 stdenv.mkDerivation rec {
-  name = "SunVox-${version}";
-  version = "1.9.3b";
+  pname = "SunVox";
+  version = "1.9.5";
 
   src = fetchurl {
     url = "http://www.warmplace.ru/soft/sunvox/sunvox-${version}.zip";
-    sha256 = "0k74rcq7niw4p17vj3zp9lpgi932896dmzqv4ln43g0pz7l18c8b";
+    sha256 = "011cyagbqqkvnrxxq196zsvcyn3gksjfsaas02xl8ncjwfj084di";
   };
 
   buildInputs = [ unzip ];

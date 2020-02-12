@@ -1,23 +1,38 @@
-{ stdenv, intltool, fetchurl, pkgconfig, bash
-, itstool, libxml2, libxslt, gnome3 }:
+{ stdenv
+, gettext
+, fetchurl
+, pkgconfig
+, itstool
+, libxml2
+, libxslt
+, gnome3
+}:
 
 stdenv.mkDerivation rec {
-  name = "yelp-xsl-${version}";
-  version = "3.20.1";
+  pname = "yelp-xsl";
+  version = "3.34.2";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/yelp-xsl/${gnome3.versionBranch version}/${name}.tar.xz";
-    sha256 = "dc61849e5dca473573d32e28c6c4e3cf9c1b6afe241f8c26e29539c415f97ba0";
+    url = "mirror://gnome/sources/yelp-xsl/${stdenv.lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
+    sha256 = "1bdpgkzawhqmw52l6zx8czzg1ndfgcf1p44m2bxjdpqkc4afcgqc";
   };
 
-  passthru = {
-    updateScript = gnome3.updateScript { packageName = "yelp-xsl"; attrPath = "gnome3.yelp-xsl"; };
-  };
+  nativeBuildInputs = [
+    pkgconfig
+    gettext
+    itstool
+    libxml2
+    libxslt
+  ];
 
   doCheck = true;
 
-  nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [ intltool itstool libxml2 libxslt ];
+  passthru = {
+    updateScript = gnome3.updateScript {
+      packageName = pname;
+      attrPath = "gnome3.${pname}";
+    };
+  };
 
   meta = with stdenv.lib; {
     homepage = https://wiki.gnome.org/Apps/Yelp;

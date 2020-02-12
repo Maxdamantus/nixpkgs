@@ -1,28 +1,27 @@
-{ stdenv, fetchFromGitHub, fetchNodeModules, nodejs-8_x, ruby, sencha
-, auth0ClientID, auth0Domain, disableTooltips }:
+{ stdenv, fetchFromGitHub, fetchNodeModules, nodejs-10_x, ruby, sencha
+, auth0ClientID, auth0Domain }:
 
 stdenv.mkDerivation rec {
-  name = "rambox-bare-${version}";
-  version = "0.5.13";
+  pname = "rambox-bare";
+  version = "0.7.3";
 
   src = fetchFromGitHub {
-    owner = "saenzramiro";
-    repo = "rambox";
+    owner = "ramboxapp";
+    repo = "community-edition";
     rev = version;
-    sha256 = "0c770a9z017y6gcrpyri7s1gifm8zi5f29bq5nvh3zzg4wgqh326";
+    sha256 = "03pwzyij2i5m23qzhyqdcipixmqj46qbjmq626swwqy03a0p91qv";
   };
 
-  nativeBuildInputs = [ nodejs-8_x ruby sencha ];
+  nativeBuildInputs = [ nodejs-10_x ruby sencha ];
 
   node_modules = fetchNodeModules {
     inherit src;
 
-    nodejs = nodejs-8_x;
-    sha256 = "1y3q8ggyvfywxqi5hn9mvr1sjfylspis43iyf4b7snyr1a1br3r4";
+    nodejs = nodejs-10_x;
+    sha256 = "05vb0r0q3ckg2g87fsm22j0cbfvk81q5z43zwmrzh3pb3zh54xj1";
   };
 
-  patches = [ ./hide-check-for-updates.patch ./isDev.patch ]
-    ++ stdenv.lib.optionals disableTooltips [ ./disable-tooltips.patch ];
+  patches = [ ./isDev.patch ];
 
   configurePhase = ''
     echo 'var auth0Cfg = { clientID: "${auth0ClientID}", domain: "${auth0Domain}" };' > env.js

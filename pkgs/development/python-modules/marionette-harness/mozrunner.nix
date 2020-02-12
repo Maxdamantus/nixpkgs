@@ -1,5 +1,4 @@
 { lib
-, stdenv
 , buildPythonPackage
 , fetchPypi
 , mozdevice
@@ -13,12 +12,11 @@
 
 buildPythonPackage rec {
   pname = "mozrunner";
-  version = "6.13";
-  name = "${pname}-${version}";
+  version = "7.7.0";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "1d5k3a0w1iyyk6l28l65j47grq87zd207h369x4vahq02nrx2g6l";
+    sha256 = "04s6w0sp83bn3c6ym75rnlpmcy3yr7d35jxkxhgzmy75gbcps7bi";
   };
 
   propagatedBuildInputs = [ mozdevice mozfile mozinfo mozlog mozprocess

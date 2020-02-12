@@ -1,23 +1,29 @@
-{ stdenv, fetchurl, python27Packages }:
+{ stdenv, python3Packages }:
 
-python27Packages.buildPythonApplication rec {
-  version = "2.22.0";
-  name = "fanficfare-${version}";
-  nameprefix = "";
+python3Packages.buildPythonApplication rec {
+  pname = "FanFicFare";
+  version = "3.15.0";
 
-  src = fetchurl {
-    url = "https://github.com/JimmXinu/FanFicFare/archive/v${version}.tar.gz";
-    sha256 = "1gwr2qk0wff8f69w21ffj6cq8jklqd89vcdhhln6ii1h1kf8k031";
+  src = python3Packages.fetchPypi {
+    inherit pname version;
+    sha256 = "12nsrl8nvg52mi136m7ayvaivwjapn7ry95137ynj1njy2w990hm";
   };
 
-  propagatedBuildInputs = with python27Packages; [ beautifulsoup4 chardet html5lib html2text ];
+  propagatedBuildInputs = with python3Packages; [
+    beautifulsoup4
+    chardet
+    html5lib
+    html2text
+  ];
+
+  doCheck = false; # no tests exist
 
   meta = with stdenv.lib; {
-    description = "FanFicFare is a tool for making eBooks from fanfiction web sites";
+    description = "Tool for making eBooks from fanfiction web sites";
     homepage = https://github.com/JimmXinu/FanFicFare;
     license = licenses.gpl3;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ lucas8 ];
+    maintainers = with maintainers; [ dwarfmaster ];
     inherit version;
   };
 }

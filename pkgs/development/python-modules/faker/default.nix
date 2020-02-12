@@ -1,32 +1,50 @@
 { lib, buildPythonPackage, fetchPypi, pythonOlder,
   # Build inputs
-  dateutil, six, ipaddress ? null,
+  dateutil, six, text-unidecode, ipaddress ? null
   # Test inputs
-  email_validator, nose, mock, ukpostcodeparser }:
+  , email_validator
+  , freezegun
+  , mock
+  , more-itertools
+  , pytest
+  , pytestrunner
+  , random2
+  , ukpostcodeparser
+  , validators
+}:
 
 assert pythonOlder "3.3" -> ipaddress != null;
 
 buildPythonPackage rec {
   pname = "Faker";
-  version = "0.8.8";
-  name = "${pname}-${version}";
+  version = "3.0.0";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "e928cf853ef69d7471421f2a3716a1239e43de0fa9855f4016ee0c9f1057328a";
+    sha256 = "92c84a10bec81217d9cb554ee12b3838c8986ce0b5d45f72f769da22e4bb5432";
   };
 
+  nativeBuildInputs = [ pytestrunner ];
   checkInputs = [
     email_validator
-    nose
-    mock
+    freezegun
+    pytest
+    random2
     ukpostcodeparser
-  ];
+    validators
+  ]
+  ++ lib.optionals (pythonOlder "3.3") [ mock ]
+  ++ lib.optionals (pythonOlder "3.0") [ more-itertools ];
 
   propagatedBuildInputs = [
     dateutil
     six
-  ] ++ lib.optional (pythonOlder "3.3") ipaddress;
+    text-unidecode
+  ];
+
+  postPatch = ''
+    substituteInPlace setup.py --replace "pytest>=3.8.0,<3.9" "pytest"
+  '';
 
   meta = with lib; {
     description = "A Python library for generating fake user data";

@@ -1,19 +1,24 @@
 { stdenv, fetchFromGitHub, autoreconfHook }:
 
 stdenv.mkDerivation rec {
-  name = "re2c-${version}";
-  version = "0.16";
-
-  sourceRoot = "${src.name}/re2c";
+  pname = "re2c";
+  version = "1.2.1";
 
   src = fetchFromGitHub {
     owner  = "skvadrik";
     repo   = "re2c";
     rev    = version;
-    sha256 = "0cijgmbyx34nwl2jmsswggkgvzy364871rkbxz8biq9x8xrhhjw5";
+    sha256 = "1qj0ck9msb9h8g9qb1lr57jmlj8x68ini3y3ccdifjjahhhr0hd4";
   };
 
   nativeBuildInputs = [ autoreconfHook ];
+
+  doCheck = true;
+  enableParallelBuilding = true;
+
+  preCheck = ''
+    patchShebangs run_tests.sh
+  '';
 
   meta = with stdenv.lib; {
     description = "Tool for writing very fast and very flexible scanners";

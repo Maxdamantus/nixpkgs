@@ -1,38 +1,48 @@
-{ stdenv
-, fetchurl
+{ fetchurl
 , python
+, anki
 }:
 
 python.pkgs.buildPythonApplication rec {
   pname = "mnemosyne";
-  version = "2.6";
+  version = "2.7";
 
   src = fetchurl {
     url    = "mirror://sourceforge/project/mnemosyne-proj/mnemosyne/mnemosyne-${version}/Mnemosyne-${version}.tar.gz";
-    sha256 = "0b7b5sk5bfbsg5cyybkv5xw9zw257v3khsn0lwlbxnlhakd0rsg4";
+    sha256 = "0lx70vl3pa3c42lr59s459b2bqi7fm0c80lsm06l34ggfwdadq24";
   };
 
+  nativeBuildInputs = with python.pkgs; [ wrapPython pyqtwebengine.wrapQtAppsHook ];
+
+  buildInputs = [ anki ];
+
   propagatedBuildInputs = with python.pkgs; [
+    pyqtwebengine
     pyqt5
     matplotlib
     cherrypy
     cheroot
     webob
-    pillow
   ];
-
-  # No tests/ directrory in tarball
-  doCheck = false;
 
   prePatch = ''
     substituteInPlace setup.py --replace /usr $out
     find . -type f -exec grep -H sys.exec_prefix {} ';' | cut -d: -f1 | xargs sed -i s,sys.exec_prefix,\"$out\",
   '';
 
+  # No tests/ directrory in tarball
+  doCheck = false;
+
   postInstall = ''
     mkdir -p $out/share
     mv $out/${python.sitePackages}/$out/share/locale $out/share
     rm -r $out/${python.sitePackages}/nix
+  '';
+
+  dontWrapQtApps = true;
+
+  preFixup = ''
+    makeWrapperArgs+=("''${qtWrapperArgs[@]}")
   '';
 
   meta = {

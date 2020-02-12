@@ -1,21 +1,21 @@
-{ stdenv, fetchFromGitHub, cmake, boost }:
+{ stdenv, fetchFromGitHub, cmake }:
 
 stdenv.mkDerivation rec {
-  name = "libyaml-cpp-${version}";
-  version = "0.6.1";
+  pname = "libyaml-cpp";
+  version = "0.6.3";
 
   src = fetchFromGitHub {
     owner = "jbeder";
     repo = "yaml-cpp";
     rev = "yaml-cpp-${version}";
-    sha256 = "16x53p9gfch7gpyg865j7m1zhqsixx2hbbd206ffjv0ip8cjipjf";
+    sha256 = "0ykkxzxcwwiv8l8r697gyqh1nl582krpvi7m7l6b40ijnk4pw30s";
   };
 
   outputs = [ "out" "dev" ];
 
   nativeBuildInputs = [ cmake ];
 
-  cmakeFlags = "-DBUILD_SHARED_LIBS=ON";
+  cmakeFlags = [ "-DBUILD_SHARED_LIBS=ON" "-DYAML_CPP_BUILD_TESTS=OFF" ];
 
   meta = with stdenv.lib; {
     inherit (src.meta) homepage;

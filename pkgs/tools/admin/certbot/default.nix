@@ -1,38 +1,49 @@
-{ stdenv, python2Packages, fetchFromGitHub, dialog }:
+{ stdenv, python37Packages, fetchFromGitHub, fetchurl, dialog, autoPatchelfHook }:
 
-# Latest version of certbot supports python3 and python3 version of pythondialog
 
-python2Packages.buildPythonApplication rec {
-  name = "certbot-${version}";
-  version = "0.19.0";
+python37Packages.buildPythonApplication rec {
+  pname = "certbot";
+  version = "1.0.0";
 
   src = fetchFromGitHub {
-    owner = "certbot";
-    repo = "certbot";
+    owner = pname;
+    repo = pname;
     rev = "v${version}";
-    sha256 = "14i3q59v7j0q2pa1dri420fhil4h0vgl4vb471hp81f4y14gq6h7";
+    sha256 = "180x7gcpfbrzw8k654s7b5nxdy2yg61lq513dykyn3wz4gssw465";
   };
 
-  propagatedBuildInputs = with python2Packages; [
+  patches = [
+    ./0001-Don-t-use-distutils.StrictVersion-that-cannot-handle.patch
+  ];
+
+  propagatedBuildInputs = with python37Packages; [
     ConfigArgParse
     acme
     configobj
     cryptography
+    distro
+    josepy
     parsedatetime
     psutil
     pyRFC3339
     pyopenssl
-    python2-pythondialog
     pytz
     six
     zope_component
     zope_interface
   ];
-  buildInputs = [ dialog ] ++ (with python2Packages; [ nose mock gnureadline ]);
 
-  patchPhase = ''
-    substituteInPlace certbot/notify.py --replace "/usr/sbin/sendmail" "/run/wrappers/bin/sendmail"
-    substituteInPlace certbot/util.py --replace "sw_vers" "/usr/bin/sw_vers"
+  buildInputs = [ dialog ] ++ (with python37Packages; [ mock gnureadline ]);
+
+  checkInputs = with python37Packages; [
+    pytest_xdist
+    pytest
+    dateutil
+  ];
+
+  postPatch = ''
+    cd certbot
+    substituteInPlace certbot/_internal/notify.py --replace "/usr/sbin/sendmail" "/run/wrappers/bin/sendmail"
   '';
 
   postInstall = ''
@@ -41,6 +52,8 @@ python2Packages.buildPythonApplication rec {
                        --prefix PATH : "${dialog}/bin:$PATH"
     done
   '';
+
+  doCheck = true;
 
   meta = with stdenv.lib; {
     homepage = src.meta.homepage;

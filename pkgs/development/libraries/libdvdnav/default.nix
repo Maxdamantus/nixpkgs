@@ -1,12 +1,12 @@
 {stdenv, fetchurl, pkgconfig, libdvdread}:
 
 stdenv.mkDerivation rec {
-  name = "libdvdnav-${version}";
-  version = "5.0.3";
+  pname = "libdvdnav";
+  version = "6.0.1";
 
   src = fetchurl {
-    url = "http://get.videolan.org/libdvdnav/${version}/${name}.tar.bz2";
-    sha256 = "5097023e3d2b36944c763f1df707ee06b19dc639b2b68fb30113a5f2cbf60b6d";
+    url = "http://get.videolan.org/libdvdnav/${version}/${pname}-${version}.tar.bz2";
+    sha256 = "0cv7j8irsv1n2dadlnhr6i1b8pann2ah6xpxic41f04my6ba6rp5";
   };
 
   nativeBuildInputs = [ pkgconfig ];
@@ -17,7 +17,7 @@ stdenv.mkDerivation rec {
     description = "A library that implements DVD navigation features such as DVD menus";
     license = stdenv.lib.licenses.gpl2;
     maintainers = [ stdenv.lib.maintainers.wmertens ];
-    platforms = stdenv.lib.platforms.linux;
+    platforms = stdenv.lib.platforms.unix;
   };
 
   passthru = { inherit libdvdread; };

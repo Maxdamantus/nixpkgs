@@ -1,15 +1,18 @@
-{ stdenv, buildPackages, hostPlatform, fetchurl, perl, buildLinux, ... } @ args:
+{ stdenv, buildPackages, fetchurl, perl, buildLinux, modDirVersionArg ? null, ... } @ args:
 
 with stdenv.lib;
 
 buildLinux (args // rec {
-  version = "4.14.26";
+  version = "4.14.170";
+
+  # modDirVersion needs to be x.y.z, will automatically add .0 if needed
+  modDirVersion = if (modDirVersionArg == null) then concatStringsSep "." (take 3 (splitVersion "${version}.0")) else modDirVersionArg;
 
   # branchVersion needs to be x.y
-  extraMeta.branch = concatStrings (intersperse "." (take 2 (splitString "." version)));
+  extraMeta.branch = versions.majorMinor version;
 
   src = fetchurl {
     url = "mirror://kernel/linux/kernel/v4.x/linux-${version}.tar.xz";
-    sha256 = "0n3ckh77n81jfgrivhxz17fm2l3mi5yicjg19sc7n0318b2nd94r";
+    sha256 = "1hqp3spi4cqgkqkzx5g2nbp6isz0kdcsj56ilsp6siqiglj662ll";
   };
 } // (args.argsOverride or {}))

@@ -1,12 +1,12 @@
-{ stdenv, fetchurl, perl }:
+{ stdenv, fetchurl }:
 
 stdenv.mkDerivation rec {
-  name = "bibutils-${version}";
-  version = "6.2";
+  pname = "bibutils";
+  version = "6.8";
 
   src = fetchurl {
     url = "mirror://sourceforge/bibutils/bibutils_${version}_src.tgz";
-    sha256 = "07wgzk01kfdrjl6g3qlxg9qbi3kyrxxmxyy49qmcfq24fpmf9mrr";
+    sha256 = "1n28fjrl7zxjxvcqzmrc9xj8ly6nkxviimxbzamj8dslnkzpzqw1";
   };
 
   configureFlags = [ "--dynamic" "--install-dir" "$(out)/bin" "--install-lib" "$(out)/lib" ];

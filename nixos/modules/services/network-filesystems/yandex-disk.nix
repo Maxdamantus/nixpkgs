@@ -29,7 +29,7 @@ in
 
       username = mkOption {
         default = "";
-        type = types.string;
+        type = types.str;
         description = ''
           Your yandex.com login name.
         '';
@@ -37,7 +37,7 @@ in
 
       password = mkOption {
         default = "";
-        type = types.string;
+        type = types.str;
         description = ''
           Your yandex.com password. Warning: it will be world-readable in /nix/store.
         '';
@@ -57,7 +57,7 @@ in
 
       excludes = mkOption {
         default = "";
-        type = types.string;
+        type = types.commas;
         example = "data,backup";
         description = ''
           Comma-separated list of directories which are excluded from synchronization.
@@ -73,7 +73,7 @@ in
 
   config = mkIf cfg.enable {
 
-    users.extraUsers = mkIf (cfg.user == null) [ {
+    users.users = mkIf (cfg.user == null) [ {
       name = u;
       uid = config.ids.uids.yandexdisk;
       group = "nogroup";
@@ -99,10 +99,10 @@ in
             exit 1
         fi
 
-        ${pkgs.su}/bin/su -s ${pkgs.stdenv.shell} ${u} \
+        ${pkgs.su}/bin/su -s ${pkgs.runtimeShell} ${u} \
           -c '${pkgs.yandex-disk}/bin/yandex-disk token -p ${cfg.password} ${cfg.username} ${dir}/token'
 
-        ${pkgs.su}/bin/su -s ${pkgs.stdenv.shell} ${u} \
+        ${pkgs.su}/bin/su -s ${pkgs.runtimeShell} ${u} \
           -c '${pkgs.yandex-disk}/bin/yandex-disk start --no-daemon -a ${dir}/token -d ${cfg.directory} --exclude-dirs=${cfg.excludes}'
       '';
 

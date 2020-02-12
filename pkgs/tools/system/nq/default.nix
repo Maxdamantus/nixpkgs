@@ -1,15 +1,15 @@
 { stdenv, lib, fetchFromGitHub }:
 
 stdenv.mkDerivation rec {
-  name = "nq-${version}";
-  version = "0.2.2";
+  pname = "nq";
+  version = "0.3.1";
   src = fetchFromGitHub {
     owner = "chneukirchen";
     repo = "nq";
     rev = "v${version}";
-    sha256 = "0348r3j5y445psm8lj35z100cfvbfp05s7ji6bxd0gg4n66l2c4l";
+    sha256 = "1db96ykz35r273jyhf7cdknqk4p2jj9l8gbz7pjy1hq4pb6ffk99";
   };
-  makeFlags = "PREFIX=$(out)";
+  makeFlags = [ "PREFIX=$(out)" ];
   postPatch = ''
     sed -i tq \
       -e 's|\bfq\b|'$out'/bin/fq|g' \

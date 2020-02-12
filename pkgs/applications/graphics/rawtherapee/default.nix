@@ -1,24 +1,24 @@
 { stdenv, fetchFromGitHub, pkgconfig, cmake, pixman, libpthreadstubs, gtkmm3, libXau
 , libXdmcp, lcms2, libiptcdata, libcanberra-gtk3, fftw, expat, pcre, libsigcxx, wrapGAppsHook
-, lensfun
+, lensfun, librsvg
 }:
 
 stdenv.mkDerivation rec {
-  version = "5.3";
-  name = "rawtherapee-" + version;
+  version = "5.7";
+  pname = "rawtherapee";
 
   src = fetchFromGitHub {
     owner = "Beep6581";
     repo = "RawTherapee";
     rev = version;
-    sha256 = "1r6sx9zl1wkykgfx6k26268xadair6hzl15v5hmiri9sdhrn33q7";
+    sha256 = "0j3887a3683fqpvp66kaw6x81ai3gf5nvrbmb4cc8rb0lgj2xv2g";
   };
 
   nativeBuildInputs = [ cmake pkgconfig wrapGAppsHook ];
 
   buildInputs = [
     pixman libpthreadstubs gtkmm3 libXau libXdmcp
-    lcms2 libiptcdata libcanberra-gtk3 fftw expat pcre libsigcxx lensfun
+    lcms2 libiptcdata libcanberra-gtk3 fftw expat pcre libsigcxx lensfun librsvg
   ];
 
   cmakeFlags = [
@@ -38,7 +38,7 @@ stdenv.mkDerivation rec {
     description = "RAW converter and digital photo processing software";
     homepage = http://www.rawtherapee.com/;
     license = stdenv.lib.licenses.gpl3Plus;
-    maintainers = with stdenv.lib.maintainers; [ viric jcumming mahe the-kenny ];
+    maintainers = with stdenv.lib.maintainers; [ jcumming mahe the-kenny ];
     platforms = with stdenv.lib.platforms; linux;
   };
 }

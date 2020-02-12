@@ -1,20 +1,20 @@
-{ stdenv, fetchFromGitHub, fetchpatch
+{ stdenv, fetchFromGitHub
 , pkgconfig, cmake, doxygen
 , libopenshot-audio, imagemagick, ffmpeg
 , swig, python3
-, unittest-cpp, cppzmq, czmqpp
+, unittest-cpp, cppzmq, zeromq
 , qtbase, qtmultimedia }:
 
 with stdenv.lib;
 stdenv.mkDerivation rec {
-  name = "libopenshot-${version}";
-  version = "0.1.7";
+  pname = "libopenshot";
+  version = "0.2.3";
 
   src = fetchFromGitHub {
     owner = "OpenShot";
     repo = "libopenshot";
     rev = "v${version}";
-    sha256 = "1dk40qild8d3s99p2kkm0mjvxfxrz2wns7ij1brzqmcdnaxqdhlp";
+    sha256 = "0r1qmr8ar5n72603xkj9h065vbpznrqsq88kxxmn9n8djyyvk03k";
   };
 
   patchPhase = ''
@@ -27,9 +27,9 @@ stdenv.mkDerivation rec {
 
   buildInputs =
   [ imagemagick ffmpeg swig python3 unittest-cpp
-    cppzmq czmqpp qtbase qtmultimedia ];
+    cppzmq zeromq qtbase qtmultimedia ];
 
-  LIBOPENSHOT_AUDIO_DIR = "${libopenshot-audio}";
+  LIBOPENSHOT_AUDIO_DIR = libopenshot-audio;
   "UNITTEST++_INCLUDE_DIR" = "${unittest-cpp}/include/UnitTest++";
 
   doCheck = false;

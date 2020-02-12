@@ -1,38 +1,34 @@
-{ stdenv
-, buildPythonPackage
-, fetchPypi
-, botocore
-, bcdoc
-, s3transfer
-, six
-, colorama
-, docutils
-, rsa
-, pyyaml
+{ lib
+, python3
 , groff
 , less
 }:
 
 let
-  colorama_3_7 = colorama.overrideAttrs (old: rec {
-    name = "${pname}-${version}";
-    pname = "colorama";
-    version = "0.3.7";
-    src = old.src.override {
-      inherit version;
-      sha256 = "0avqkn6362v7k2kg3afb35g4sfdvixjgy890clip4q174p9whhz0";
+  py = python3.override {
+    packageOverrides = self: super: {
+      rsa = super.rsa.overridePythonAttrs (oldAttrs: rec {
+        version = "3.4.2";
+        src = oldAttrs.src.override {
+          inherit version;
+          sha256 = "25df4e10c263fb88b5ace923dd84bf9aa7f5019687b5e55382ffcdb8bede9db5";
+        };
+      });
     };
-  });
+  };
 
-in buildPythonPackage rec {
+in with py.pkgs; buildPythonApplication rec {
   pname = "awscli";
-  version = "1.14.41";
-  namePrefix = "";
+  version = "1.17.13"; # N.B: if you change this, change botocore to a matching version too
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "8cf2a52d56f26e22e2fbd7b72649ef1d3de8930df7a730d7f27418d129bb3a6a";
+    sha256 = "c42fc35d4e9f82ce72b2a8b8d54df3a57fe363b0763a473e72d0006b0d1e06ff";
   };
+
+  postPatch = ''
+    substituteInPlace setup.py --replace ",<0.16" ""
+  '';
 
   # No tests included
   doCheck = false;
@@ -42,7 +38,7 @@ in buildPythonPackage rec {
     bcdoc
     s3transfer
     six
-    colorama_3_7
+    colorama
     docutils
     rsa
     pyyaml
@@ -58,10 +54,12 @@ in buildPythonPackage rec {
     rm $out/bin/aws.cmd
   '';
 
-  meta = with stdenv.lib; {
+  passthru.python = py; # for aws_shell
+
+  meta = with lib; {
     homepage = https://aws.amazon.com/cli/;
     description = "Unified tool to manage your AWS services";
-    license = stdenv.lib.licenses.asl20;
+    license = licenses.asl20;
     maintainers = with maintainers; [ muflax ];
   };
 }

@@ -1,37 +1,66 @@
-{ stdenv, fetchFromGitHub, rustPlatform, makeWrapper, llvmPackages }:
-
-# Future work: Automatically communicate NIX_CFLAGS_COMPILE to bindgen's tests and the bindgen executable itself.
+{ stdenv, fetchFromGitHub, rustPlatform, clang, llvmPackages, rustfmt, writeScriptBin,
+  runtimeShell }:
 
 rustPlatform.buildRustPackage rec {
-  name = "rust-bindgen-${version}";
-  version = "0.32.1";
+  pname = "rust-bindgen";
+  version = "0.52.0";
+
+  RUSTFLAGS = "--cap-lints warn"; # probably OK to remove after update
 
   src = fetchFromGitHub {
-    owner = "rust-lang-nursery";
-    repo = "rust-bindgen";
-    rev = version;
-    sha256 = "15m1y468c7ixzxwx29wazag0i19a3bmzjp53np6b62sf9wfzbsfa";
+    owner = "rust-lang";
+    repo = pname;
+    rev = "v${version}";
+    sha256 = "0rf5sg9136f4j7s07iz2gd481h8gzdd106jc1jw1p5pw4zaiz5l0";
   };
 
-  nativeBuildInputs = [ makeWrapper ];
-  buildInputs = [ llvmPackages.clang-unwrapped ];
+  cargoSha256 = "1wy5xdkf9ql2l9qavi0fh7hwjvly108f4l2m1k947412fyjwr7x7";
+
+  libclang = llvmPackages.libclang.lib; #for substituteAll
+
+  buildInputs = [ libclang ];
+
+  propagatedBuildInputs = [ clang ]; # to populate NIX_CXXSTDLIB_COMPILE
 
   configurePhase = ''
-    export LIBCLANG_PATH="${llvmPackages.clang-unwrapped}/lib"
+    export LIBCLANG_PATH="${libclang}/lib"
   '';
 
   postInstall = ''
-    wrapProgram $out/bin/bindgen --set LIBCLANG_PATH "${llvmPackages.clang-unwrapped}/lib"
+    mv $out/bin/{bindgen,.bindgen-wrapped};
+    substituteAll ${./wrapper.sh} $out/bin/bindgen
+    chmod +x $out/bin/bindgen
   '';
 
-  cargoSha256 = "01h0y5phdv3ab8mk2yxw8lgg9783pjjnjl4087iddqhqanlv600d";
-
-  doCheck = false; # A test fails because it can't find standard headers in NixOS
+  doCheck = true;
+  checkInputs =
+    let fakeRustup = writeScriptBin "rustup" ''
+      #!${runtimeShell}
+      shift
+      shift
+      exec "$@"
+    '';
+  in [
+    rustfmt
+    fakeRustup # the test suite insists in calling `rustup run nightly rustfmt`
+    clang
+  ];
+  preCheck = ''
+    # for the ci folder, notably
+    patchShebangs .
+  '';
 
   meta = with stdenv.lib; {
     description = "C and C++ binding generator";
-    homepage = https://github.com/rust-lang-nursery/rust-bindgen;
+    longDescription = ''
+      Bindgen takes a c or c++ header file and turns them into
+      rust ffi declarations.
+      As with most compiler related software, this will only work
+      inside a nix-shell with the required libraries as buildInputs.
+    '';
+    homepage = https://github.com/rust-lang/rust-bindgen;
     license = with licenses; [ bsd3 ];
+    platforms = platforms.unix;
     maintainers = [ maintainers.ralith ];
   };
 }

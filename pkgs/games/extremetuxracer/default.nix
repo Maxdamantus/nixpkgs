@@ -1,22 +1,22 @@
-{ stdenv, fetchurl, libGLU_combined, libX11, xproto, tcl, freeglut, freetype
-, sfml, libXi, inputproto
-, libXmu, libXext, xextproto, libXt, libSM, libICE
+{ stdenv, fetchurl, libGLU, libGL, libX11, xorgproto, tcl, freeglut, freetype
+, sfml, libXi
+, libXmu, libXext, libXt, libSM, libICE
 , libpng, pkgconfig, gettext, intltool
 }:
 
 stdenv.mkDerivation rec {
-  version = "0.7.4";
-  name = "extremetuxracer-${version}";
+  version = "0.7.5";
+  pname = "extremetuxracer";
 
   src = fetchurl {
     url = "mirror://sourceforge/extremetuxracer/etr-${version}.tar.xz";
-    sha256 = "0d2j4ybdjmimg67v2fndgahgq4fvgz3fpfb3a4l1ar75n6hy776s";
+    sha256 = "1ly63316c07i0gyqqmyzsyvygsvygn0fpk3bnbg25fi6li99rlsg";
   };
 
   buildInputs = [
-    libGLU_combined libX11 xproto tcl freeglut freetype
-    sfml libXi inputproto
-    libXmu libXext xextproto libXt libSM libICE
+    libGLU libGL libX11 xorgproto tcl freeglut freetype
+    sfml libXi
+    libXmu libXext libXt libSM libICE
     libpng pkgconfig gettext intltool
   ];
 
@@ -33,7 +33,7 @@ stdenv.mkDerivation rec {
     '';
     license = stdenv.lib.licenses.gpl2Plus;
     homepage = https://sourceforge.net/projects/extremetuxracer/;
-    maintainers = with stdenv.lib.maintainers; [ fuuzetsu ];
+    maintainers = with stdenv.lib.maintainers; [ ];
     platforms = with stdenv.lib.platforms; linux;
   };
 }

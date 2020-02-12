@@ -2,16 +2,17 @@
 , pkgconfig, gettext, xmlsec, zlib
 }:
 
-stdenv.mkDerivation rec {
-  name = "aqbanking-${version}";
-  version = "5.6.10";
+let
+  inherit ((import ./sources.nix).aqbanking) sha256 releaseId version;
+in stdenv.mkDerivation rec {
+  pname = "aqbanking";
+  inherit version;
 
   src = let
-    inherit ((import ./sources.nix).aqbanking) sha256 releaseId;
-    qstring = "package=03&release=${releaseId}&file=01";
+    qstring = "package=03&release=${releaseId}&file=02";
     mkURLs = map (base: "${base}/sites/download/download.php?${qstring}");
   in fetchurl {
-    name = "${name}.tar.gz";
+    name = "${pname}-${version}.tar.gz";
     urls = mkURLs [ "http://www.aquamaniac.de" "http://www2.aquamaniac.de" ];
     inherit sha256;
   };

@@ -1,18 +1,21 @@
-{ stdenv, fetchurl, cmake, pkgconfig, zlib, pcre, expat, sqlite, openssl, unixODBC, mysql }:
+{ stdenv, fetchurl, cmake, pkgconfig, zlib, pcre, expat, sqlite, openssl, unixODBC, libmysqlclient }:
 
 stdenv.mkDerivation rec {
-  name = "poco-${version}";
+  pname = "poco";
 
-  version = "1.8.1";
+  version = "1.9.4";
 
   src = fetchurl {
-    url = "https://pocoproject.org/releases/${name}/${name}-all.tar.gz";
-    sha256 = "1pg48kk0354vsc6j2wnrk893l5xcsr3bjmkgykd3harcnvfqs7l8";
+    url = "https://pocoproject.org/releases/${pname}-${version}/${pname}-${version}-all.tar.gz";
+    sha256 = "0xzxi3r4v2076kcxhj7b1achma2lqy01spshxq8sfh0jn5bz4d7b";
   };
 
   nativeBuildInputs = [ cmake pkgconfig ];
 
-  buildInputs = [ zlib pcre expat sqlite openssl unixODBC mysql.connector-c ];
+  buildInputs = [ zlib pcre expat sqlite openssl unixODBC libmysqlclient ];
+
+  MYSQL_DIR = libmysqlclient;
+  MYSQL_INCLUDE_DIR = "${MYSQL_DIR}/include/mysql";
 
   cmakeFlags = [
     "-DPOCO_UNBUNDLED=ON"
@@ -25,6 +28,5 @@ stdenv.mkDerivation rec {
     description = "Cross-platform C++ libraries with a network/internet focus";
     license = licenses.boost;
     maintainers = with maintainers; [ orivej ];
-    platforms = platforms.linux;
   };
 }

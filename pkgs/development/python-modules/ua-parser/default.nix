@@ -2,11 +2,11 @@
 
 buildPythonPackage rec {
   pname = "ua-parser";
-  version = "0.7.3";
+  version = "0.9.0";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "1p8siba0rnb5nsl354fd5fc4751d5ybw7hgnd56yn8dncxdb1bqa";
+    sha256 = "1qpw1jdm8bp09jwjp8r38rr7rd2jy4k2if798cax3wylphm285xy";
   };
 
   buildInputs = [ pyyaml ];

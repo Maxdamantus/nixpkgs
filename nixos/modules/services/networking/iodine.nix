@@ -11,6 +11,13 @@ let
 
 in
 {
+  imports = [
+    (mkRenamedOptionModule [ "services" "iodined" "enable" ] [ "services" "iodine" "server" "enable" ])
+    (mkRenamedOptionModule [ "services" "iodined" "domain" ] [ "services" "iodine" "server" "domain" ])
+    (mkRenamedOptionModule [ "services" "iodined" "ip" ] [ "services" "iodine" "server" "ip" ])
+    (mkRenamedOptionModule [ "services" "iodined" "extraConfig" ] [ "services" "iodine" "server" "extraConfig" ])
+    (mkRemovedOptionModule [ "services" "iodined" "client" ] "")
+  ];
 
   ### configuration
 
@@ -32,7 +39,7 @@ in
           foo = {
             server = "tunnel.mdomain.com";
             relay = "8.8.8.8";
-            extraConfig = "-P mysecurepassword";
+            extraConfig = "-v";
           }
         }
         '';
@@ -57,7 +64,13 @@ in
               type = types.str;
               default = "";
               description = "Additional command line parameters";
-              example = "-P mysecurepassword -l 192.168.1.10 -p 23";
+              example = "-l 192.168.1.10 -p 23";
+            };
+
+            passwordFile = mkOption {
+              type = types.str;
+              default = "";
+              description = "File that contains password";
             };
           };
         }));
@@ -88,7 +101,13 @@ in
           type = types.str;
           default = "";
           description = "Additional command line parameters";
-          example = "-P mysecurepassword -l 192.168.1.10 -p 23";
+          example = "-l 192.168.1.10 -p 23";
+        };
+
+        passwordFile = mkOption {
+          type = types.str;
+          default = "";
+          description = "File that contains password";
         };
       };
 
@@ -108,10 +127,10 @@ in
         description = "iodine client - ${name}";
         after = [ "network.target" ];
         wantedBy = [ "multi-user.target" ];
+        script = "exec ${pkgs.iodine}/bin/iodine -f -u ${iodinedUser} ${cfg.extraConfig} ${optionalString (cfg.passwordFile != "") "< \"${cfg.passwordFile}\""} ${cfg.relay} ${cfg.server}";
         serviceConfig = {
           RestartSec = "30s";
           Restart = "always";
-          ExecStart = "${pkgs.iodine}/bin/iodine -f -u ${iodinedUser} ${cfg.extraConfig} ${cfg.relay} ${cfg.server}";
         };
       };
     in
@@ -124,15 +143,14 @@ in
         description = "iodine, ip over dns server daemon";
         after = [ "network.target" ];
         wantedBy = [ "multi-user.target" ];
-        serviceConfig.ExecStart = "${pkgs.iodine}/bin/iodined -f -u ${iodinedUser} ${cfg.server.extraConfig} ${cfg.server.ip} ${cfg.server.domain}";
+        script = "exec ${pkgs.iodine}/bin/iodined -f -u ${iodinedUser} ${cfg.server.extraConfig} ${optionalString (cfg.server.passwordFile != "") "< \"${cfg.server.passwordFile}\""} ${cfg.server.ip} ${cfg.server.domain}";
       };
     };
 
-    users.extraUsers = singleton {
-      name = iodinedUser;
+    users.users.${iodinedUser} = {
       uid = config.ids.uids.iodined;
       description = "Iodine daemon user";
     };
-    users.extraGroups.iodined.gid = config.ids.gids.iodined;
+    users.groups.iodined.gid = config.ids.gids.iodined;
   };
 }

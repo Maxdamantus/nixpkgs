@@ -1,37 +1,34 @@
-{ stdenv, fetchFromGitHub, writeScript, pkgconfig, cmake, qtbase, qttools
-, seafile-shared, ccnet, makeWrapper
+{ stdenv, lib, fetchFromGitHub, pkgconfig, cmake, qtbase, qttools
+, seafile-shared, ccnet, jansson, libsearpc
 , withShibboleth ? true, qtwebengine }:
 
-with stdenv.lib;
-
 stdenv.mkDerivation rec {
-  version = "6.1.5";
-  name = "seafile-client-${version}";
+  pname = "seafile-client";
+  version = "7.0.5";
 
   src = fetchFromGitHub {
     owner = "haiwen";
     repo = "seafile-client";
     rev = "v${version}";
-    sha256 = "1ahz55cw2p3s78x5f77drz4h2jhknfzpkk83qd0ggma31q1pnpl9";
+    sha256 = "08ysmhvdpyzq2s16i3fvii252fzjrxly3da74x8y6wbyy8yywmjy";
   };
 
-  nativeBuildInputs = [ pkgconfig cmake makeWrapper ];
-  buildInputs = [ qtbase qttools seafile-shared ]
-    ++ optional withShibboleth qtwebengine;
+  nativeBuildInputs = [ pkgconfig cmake ];
+  buildInputs = [ qtbase qttools seafile-shared jansson libsearpc ]
+    ++ lib.optional withShibboleth qtwebengine;
 
   cmakeFlags = [ "-DCMAKE_BUILD_TYPE=Release" ]
-    ++ optional withShibboleth "-DBUILD_SHIBBOLETH_SUPPORT=ON";
+    ++ lib.optional withShibboleth "-DBUILD_SHIBBOLETH_SUPPORT=ON";
 
-  postInstall = ''
-    wrapProgram $out/bin/seafile-applet \
-      --suffix PATH : ${stdenv.lib.makeBinPath [ ccnet seafile-shared ]}
-  '';
+  qtWrapperArgs = [
+    "--suffix PATH : ${stdenv.lib.makeBinPath [ ccnet seafile-shared ]}"
+  ];
 
-  meta = with stdenv.lib; {
-    homepage = https://github.com/haiwen/seafile-client;
+  meta = with lib; {
+    homepage = "https://github.com/haiwen/seafile-client";
     description = "Desktop client for Seafile, the Next-generation Open Source Cloud Storage";
     license = licenses.asl20;
     platforms = platforms.linux;
-    maintainers = [ ];
+    maintainers = with maintainers; [ ];
   };
 }

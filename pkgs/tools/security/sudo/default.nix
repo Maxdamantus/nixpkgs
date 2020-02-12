@@ -5,14 +5,12 @@
 }:
 
 stdenv.mkDerivation rec {
-  name = "sudo-1.8.22";
+  pname = "sudo";
+  version = "1.8.31";
 
   src = fetchurl {
-    urls =
-      [ "ftp://ftp.sudo.ws/pub/sudo/${name}.tar.gz"
-        "ftp://ftp.sudo.ws/pub/sudo/OLD/${name}.tar.gz"
-      ];
-    sha256 = "00pxp74xkwdcmrjwy55j0k8p684jk1zx3nzdc11v30q8q8kwnmkj";
+    url = "ftp://ftp.sudo.ws/pub/sudo/${pname}-${version}.tar.gz";
+    sha256 = "0ks5mm9hda5idivncyfpiz4lrd8fv0dpmsl711788k7f7ixdka3y";
   };
 
   prePatch = ''
@@ -48,12 +46,15 @@ stdenv.mkDerivation rec {
       #define _PATH_MV "${coreutils}/bin/mv"
     EOF
     makeFlags="install_uid=$(id -u) install_gid=$(id -g)"
-    installFlags="sudoers_uid=$(id -u) sudoers_gid=$(id -g) sysconfdir=$out/etc rundir=$TMPDIR/dummy vardir=$TMPDIR/dummy"
+    installFlags="sudoers_uid=$(id -u) sudoers_gid=$(id -g) sysconfdir=$out/etc rundir=$TMPDIR/dummy vardir=$TMPDIR/dummy DESTDIR=/"
     '';
 
-  buildInputs = [ coreutils pam groff ];
+  nativeBuildInputs = [ groff ];
+  buildInputs = [ pam ];
 
   enableParallelBuilding = true;
+
+  doCheck = false; # needs root
 
   postInstall =
     ''
