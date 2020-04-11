@@ -2,11 +2,11 @@
 
 buildPythonPackage rec {
   pname = "Rtree";
-  version = "0.9.3";
+  version = "0.9.4";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "55c046a98e8d84235792de1f18635f680d7b4085264fbced6b073f28fcbe353a";
+    sha256 = "0i1zlyz6vczy3cgg7fan5hq9zzjm7s7zdzfh83ma8g9vq3i2gqya";
   };
 
   propagatedBuildInputs = [ libspatialindex ];
@@ -22,7 +22,7 @@ buildPythonPackage rec {
 
   meta = with stdenv.lib; {
     description = "R-Tree spatial index for Python GIS";
-    homepage = https://toblerity.org/rtree/;
+    homepage = "https://toblerity.org/rtree/";
     license = licenses.lgpl21;
     maintainers = with maintainers; [ bgamari ];
   };

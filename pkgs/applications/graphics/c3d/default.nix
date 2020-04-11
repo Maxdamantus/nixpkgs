@@ -15,10 +15,12 @@ stdenv.mkDerivation {
     ++ stdenv.lib.optional stdenv.isDarwin Cocoa;
 
   meta = with stdenv.lib; {
-    homepage = http://www.itksnap.org/c3d;
+    homepage = "http://www.itksnap.org/c3d";
     description = "Medical imaging processing tool";
     maintainers = with maintainers; [ bcdarwin ];
     platforms = platforms.unix;
     license = licenses.gpl2;
+    broken = stdenv.isAarch64;
+    # /build/git-3453f61/itkextras/OneDimensionalInPlaceAccumulateFilter.txx:311:10: fatal error: xmmintrin.h: No such file or directory
   };
 }

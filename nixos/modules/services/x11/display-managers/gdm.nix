@@ -38,6 +38,10 @@ in
 
 {
 
+  meta = {
+    maintainers = teams.gnome.members;
+  };
+
   ###### interface
 
   options = {
@@ -166,9 +170,10 @@ in
       };
 
     systemd.tmpfiles.rules = [
-      "d /run/gdm/.config 0711 gdm gdm -"
+      "d /run/gdm/.config 0711 gdm gdm"
     ] ++ optionals config.hardware.pulseaudio.enable [
-      "L+ /run/gdm/.config/pulse - - - - ${pulseConfig}"
+      "d /run/gdm/.config/pulse 0711 gdm gdm"
+      "L+ /run/gdm/.config/pulse/${pulseConfig.name} - - - - ${pulseConfig}"
     ] ++ optionals config.services.gnome3.gnome-initial-setup.enable [
       # Create stamp file for gnome-initial-setup to prevent it starting in GDM.
       "f /run/gdm/.config/gnome-initial-setup-done 0711 gdm gdm - yes"
@@ -183,6 +188,9 @@ in
       "systemd-machined.service"
       # setSessionScript wants AccountsService
       "accounts-daemon.service"
+      # Failed to open gpu '/dev/dri/card0': GDBus.Error:org.freedesktop.DBus.Error.AccessDenied: Operation not permitted
+      # https://github.com/NixOS/nixpkgs/pull/25311#issuecomment-609417621
+      "systemd-udev-settle.service"
     ];
 
     systemd.services.display-manager.after = [
@@ -192,6 +200,7 @@ in
       "getty@tty${gdm.initialVT}.service"
       "plymouth-quit.service"
       "plymouth-start.service"
+      "systemd-udev-settle.service"
     ];
     systemd.services.display-manager.conflicts = [
        "getty@tty${gdm.initialVT}.service"

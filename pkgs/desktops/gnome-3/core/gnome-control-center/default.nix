@@ -48,6 +48,7 @@
 , mutter
 , networkmanager
 , networkmanagerapplet
+, libnma
 , ninja
 , pkgconfig
 , polkit
@@ -59,7 +60,7 @@
 , tzdata
 , udisks2
 , upower
-, vino
+, epoxy
 , gnome-user-share
 , gnome-remote-desktop
 , wrapGAppsHook
@@ -67,11 +68,11 @@
 
 stdenv.mkDerivation rec {
   pname = "gnome-control-center";
-  version = "3.34.2";
+  version = "3.36.1";
 
   src = fetchurl {
     url = "mirror://gnome/sources/${pname}/${stdenv.lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
-    sha256 = "054igagvmyzpaa5nwzz98gv7bk7l5dwp6g813707132si3szlpx8";
+    sha256 = "1466swjyw5vjym001qda94x6sisd4xhpyb6vq91grhkyzwf2vqzk";
   };
 
   nativeBuildInputs = [
@@ -125,13 +126,13 @@ stdenv.mkDerivation rec {
     modemmanager
     mutter # schemas for the keybindings
     networkmanager
-    networkmanagerapplet
+    libnma
     polkit
     samba
     tracker
     udisks2
     upower
-    vino
+    epoxy
   ];
 
   patches = [

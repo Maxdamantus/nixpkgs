@@ -38,6 +38,7 @@ buildPythonApplication rec {
     substituteInPlace mapproxy/util/ext/serving.py --replace "args = [sys.executable] + sys.argv" "args = sys.argv"
   '';
   propagatedBuildInputs = [
+    boto3 # needed for caches service
     pillow
     pyyaml
     pyproj
@@ -56,7 +57,7 @@ buildPythonApplication rec {
   doCheck = false;
   meta = with lib; {
   description = "MapProxy is an open source proxy for geospatial data";
-  homepage = https://mapproxy.org/;
+  homepage = "https://mapproxy.org/";
   license = licenses.asl20;
   maintainers = with maintainers; [ rakesh4g ];
   };

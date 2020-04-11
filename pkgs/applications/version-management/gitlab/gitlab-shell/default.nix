@@ -1,7 +1,7 @@
 { stdenv, fetchFromGitLab, buildGoPackage, ruby }:
 
 buildGoPackage rec {
-  pname = "gitlab-shell-go";
+  pname = "gitlab-shell";
   version = "11.0.0";
   src = fetchFromGitLab {
     owner = "gitlab-org";
@@ -24,7 +24,7 @@ buildGoPackage rec {
 
   meta = with stdenv.lib; {
     description = "SSH access and repository management app for GitLab";
-    homepage = http://www.gitlab.com/;
+    homepage = "http://www.gitlab.com/";
     platforms = platforms.linux;
     maintainers = with maintainers; [ fpletz globin talyz ];
     license = licenses.mit;

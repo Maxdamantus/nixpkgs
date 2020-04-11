@@ -5,13 +5,13 @@
 
 stdenv.mkDerivation rec {
   pname = "scalapack";
-  version = "2.1";
+  version = "2.1.0";
 
   src = fetchFromGitHub {
     owner = "Reference-ScaLAPACK";
     repo = pname;
     rev = "v${version}";
-    sha256 = "042q9kc383h7y0had9a37702z4s0szavss063ljvfdsbjy07gzb1";
+    sha256 = "1c10d18gj3kvpmyv5q246x35hjxaqn4ygy1cygaydhyxnm4klzdj";
   };
 
   nativeBuildInputs = [ cmake openssh ];
@@ -44,7 +44,7 @@ stdenv.mkDerivation rec {
   '';
 
   meta = with stdenv.lib; {
-    homepage = http://www.netlib.org/scalapack/;
+    homepage = "http://www.netlib.org/scalapack/";
     description = "Library of high-performance linear algebra routines for parallel distributed memory machines";
     license = licenses.bsd3;
     platforms = [ "x86_64-linux" ];

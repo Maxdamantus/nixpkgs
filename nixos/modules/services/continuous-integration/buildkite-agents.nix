@@ -208,7 +208,11 @@ in
       description = "Buildkite agent user";
       extraGroups = [ "keys" ];
       isSystemUser = true;
+      group = "buildkite-agent-${name}";
     };
+  });
+  config.users.groups = mapAgents (name: cfg: {
+    "buildkite-agent-${name}" = {};
   });
 
   config.systemd.services = mapAgents (name: cfg: {
@@ -258,7 +262,7 @@ in
   });
 
   config.assertions = mapAgents (name: cfg: [
-      { assertion = cfg.hooksPath == hooksDir || all (v: v == null) (attrValues cfg.hooks);
+      { assertion = cfg.hooksPath == (hooksDir cfg) || all (v: v == null) (attrValues cfg.hooks);
         message = ''
           Options `services.buildkite-agents.${name}.hooksPath' and
           `services.buildkite-agents.${name}.hooks.<name>' are mutually exclusive.

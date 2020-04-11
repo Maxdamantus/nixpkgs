@@ -15,7 +15,7 @@ stdenv.mkDerivation rec {
   hardeningDisable = [ "format" ];
 
   postPatch = ''
-    sed -i "s,/bin/stty,$(type -p stty),g" configure
+    sed -i "s,/bin/stty,$(type -p stty),g" configure.in
   '';
 
   configureFlags = [
@@ -35,7 +35,7 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "A tool for automating interactive applications";
-    homepage = http://expect.sourceforge.net/;
+    homepage = "http://expect.sourceforge.net/";
     license = "Expect";
     platforms = platforms.unix;
   };

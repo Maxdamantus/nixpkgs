@@ -12,11 +12,10 @@ rustPlatform.buildRustPackage rec {
   };
 
   cargoSha256 = "16d1b3pamkg29nq80n6cbzc4zl9z3cgfvdxjkr2z4xrnzmkn1ysi";
-  legacyCargoFetcher = false;
 
   meta = with lib; {
     description = "Rust library for generating cryptocurrency wallets";
-    homepage = https://github.com/ArgusHQ/wagyu;
+    homepage = "https://github.com/ArgusHQ/wagyu";
     license = with licenses; [ mit asl20 ];
     maintainers = [ maintainers.offline ];
   };

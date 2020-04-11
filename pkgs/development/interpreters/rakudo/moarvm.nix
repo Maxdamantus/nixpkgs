@@ -3,12 +3,12 @@
 
 stdenv.mkDerivation rec {
   pname = "moarvm";
-  version = "2020.01.1";
+  version = "2020.02.1";
 
   src = fetchurl {
-    url    = "https://github.com/MoarVM/MoarVM/releases/download/${version}/MoarVM-${version}.tar.gz";
-    sha256 = "11rmlps6r3nqa9m2yyv9i2imahirsqmxbfay71f3gs4ql121xdnw";
-  };
+    url = "https://www.moarvm.org/releases/MoarVM-${version}.tar.gz";
+    sha256 = "0cnnyjyci24pbws2cic80xdr7a5g3qvrsi221c6bpbnpkar81jw2";
+   };
 
   buildInputs = [ perl ] ++ stdenv.lib.optionals stdenv.isDarwin [ CoreServices ApplicationServices ];
   doCheck = false; # MoarVM does not come with its own test suite
@@ -17,7 +17,7 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "VM with adaptive optimization and JIT compilation, built for Rakudo";
-    homepage    = "https://github.com/MoarVM/MoarVM";
+    homepage    = "https://www.moarvm.org/";
     license     = licenses.artistic2;
     platforms   = platforms.unix;
     maintainers = with maintainers; [ thoughtpolice vrthra sgo ];

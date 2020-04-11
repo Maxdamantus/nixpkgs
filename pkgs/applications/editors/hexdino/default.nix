@@ -12,13 +12,12 @@ rustPlatform.buildRustPackage {
   };
 
   cargoSha256 = "06ghcd4j751mdkzwb88nqwk8la4zdb137y0iqrkpykkfx0as43x3";
-  legacyCargoFetcher = false;
 
   buildInputs = [ ncurses ];
 
   meta = with stdenv.lib; {
     description = "A hex editor with vim like keybindings written in Rust";
-    homepage = https://github.com/Luz/hexdino;
+    homepage = "https://github.com/Luz/hexdino";
     license = licenses.mit;
     maintainers = [ maintainers.luz ];
     platforms = platforms.all;

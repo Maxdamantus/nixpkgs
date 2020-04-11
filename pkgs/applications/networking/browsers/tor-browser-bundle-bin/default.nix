@@ -28,7 +28,7 @@
 , apulse
 
 # Media support (implies audio support)
-, mediaSupport ? false
+, mediaSupport ? true
 , ffmpeg
 
 , gmp
@@ -90,19 +90,19 @@ let
   fteLibPath = makeLibraryPath [ stdenv.cc.cc gmp ];
 
   # Upstream source
-  version = "9.0.4";
+  version = "9.0.9";
 
   lang = "en-US";
 
   srcs = {
     x86_64-linux = fetchurl {
       url = "https://dist.torproject.org/torbrowser/${version}/tor-browser-linux64-${version}_${lang}.tar.xz";
-      sha256 = "14zlf02i447hcdr4qap8af1k4aziznfp9m2ygqz05zsy8icm1j2k";
+      sha256 = "0ws4s0jn559j1ih60wqspxvr5wpqww29kzk0xzzbr56wfyahp4fg";
     };
 
     i686-linux = fetchurl {
       url = "https://dist.torproject.org/torbrowser/${version}/tor-browser-linux32-${version}_${lang}.tar.xz";
-      sha256 = "1bmih91gsh698fp2mbnjcq8vmwhg822wanmn99r0xhkmgpi4zw2s";
+      sha256 = "0sv73jlv0qwlkxgqkmqg1flsa9lbkxa4yahny5wrfgsbw74xibkl";
     };
   };
 in

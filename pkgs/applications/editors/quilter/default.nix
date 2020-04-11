@@ -4,13 +4,13 @@
 
 stdenv.mkDerivation rec {
   pname = "quilter";
-  version = "2.1.0";
+  version = "2.2.2";
 
   src = fetchFromGitHub {
     owner = "lainsce";
     repo = pname;
     rev = version;
-    sha256 = "1756gp3f2pmxz2k4xg4cfdbdav848qb0vjglyiy1n2k9xc79dyxz";
+    sha256 = "1bgsbcx09ca063kdqfc7nigly99d7xgx2cbkpk1nkhr0hvkyg9l9";
   };
 
   nativeBuildInputs = [
@@ -47,7 +47,7 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "Focus on your writing - designed for elementary OS";
-    homepage = https://github.com/lainsce/quilter;
+    homepage = "https://github.com/lainsce/quilter";
     license = licenses.gpl2Plus;
     maintainers = pantheon.maintainers;
     platforms = platforms.linux;

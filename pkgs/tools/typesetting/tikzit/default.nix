@@ -1,6 +1,6 @@
-{ stdenv, fetchFromGitHub, qmake, qttools, qtbase, libsForQt5, flex, bison }:
+{ stdenv, mkDerivation, fetchFromGitHub, qmake, qttools, qtbase, poppler, flex, bison }:
 
-stdenv.mkDerivation {
+mkDerivation {
   pname = "tikzit";
   version = "2.1.4";
 
@@ -12,7 +12,7 @@ stdenv.mkDerivation {
   };
 
   nativeBuildInputs = [ qmake qttools flex bison ];
-  buildInputs = [ qtbase libsForQt5.poppler ];
+  buildInputs = [ qtbase poppler ];
 
   # src/data/tikzlexer.l:29:10: fatal error: tikzparser.parser.hpp: No such file or directory
   enableParallelBuilding = false;
@@ -25,7 +25,7 @@ stdenv.mkDerivation {
       can be included directly in papers typeset using LaTeX.
       For preview support the texlive package 'preview' has to be installed.
     '';
-    homepage = https://tikzit.github.io/;
+    homepage = "https://tikzit.github.io/";
     license = licenses.gpl3Plus;
     platforms = platforms.all;
     maintainers = [ maintainers.iblech maintainers.mgttlinger ];

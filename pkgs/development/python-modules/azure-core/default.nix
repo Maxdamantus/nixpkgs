@@ -1,6 +1,7 @@
 { lib, buildPythonPackage, fetchPypi, isPy27
 , aiodns
 , aiohttp
+, mock
 , msrest
 , pytest
 , pytestCheckHook
@@ -11,14 +12,14 @@
 }:
 
 buildPythonPackage rec {
-  version = "1.2.1";
+  version = "1.4.0";
   pname = "azure-core";
   disabled = isPy27;
 
   src = fetchPypi {
     inherit pname version;
     extension = "zip";
-    sha256 = "1fff6g5lszn97qz1h4l1n255r9538yybb329ilb2rwdfq3q9kkg2";
+    sha256 = "0vfcfpb01qsrqh9xg4xyfm153bczwjglkv59zpdvrn7x0rrdc1cc";
   };
 
   propagatedBuildInputs = [
@@ -29,6 +30,7 @@ buildPythonPackage rec {
   checkInputs = [
     aiodns
     aiohttp
+    mock
     msrest
     pytest
     pytestCheckHook
